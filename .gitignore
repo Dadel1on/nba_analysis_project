@@ -1,0 +1,46 @@
+# Java
+target/
+*.jar
+*.war
+*.ear
+.classpath
+.project
+.settings/
+*.class
+*.log
+
+# Maven
+.m2/
+pom.xml.tag
+pom.xml.releaseBackup
+releases.xml
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Node
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Environment
+.env
+.env.local
+
+# Build output
+build/
+out/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
