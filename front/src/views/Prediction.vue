@@ -1,6 +1,6 @@
 <template>
-  <div class="prediction">
-    <h1>表现预测中心</h1>
+  <div class="prediction" :class="{ embedded }">
+    <h1 v-if="!embedded">表现预测中心</h1>
 
     <el-row :gutter="24">
       <!-- 左侧：球员搜索与选择 -->
@@ -260,6 +260,8 @@ import type {
   SeasonTrendPredictionResult,
 } from '@/api/types'
 
+defineProps<{ embedded?: boolean }>()
+
 const searchName = ref('')
 const players = ref<PlayerSummary[]>([])
 const selectedPlayer = ref<PlayerSummary | null>(null)
@@ -431,7 +433,22 @@ const renderTrendChart = () => {
     backgroundColor: 'transparent',
     tooltip: { 
       trigger: 'axis',
-      valueFormatter: (v: unknown) => format2(v),
+      formatter: (params: unknown) => {
+        const items = Array.isArray(params) ? params : [params]
+        const title = (items[0] as any)?.axisValueLabel ?? ''
+        const filtered = items.filter((it: any) => {
+          const raw = it?.data && typeof it.data === 'object' && 'value' in it.data ? it.data.value : it?.data
+          const num = Number(raw)
+          return raw != null && Number.isFinite(num)
+        })
+        const lines = filtered
+          .map((it: any) => {
+            const raw = it?.data && typeof it.data === 'object' && 'value' in it.data ? it.data.value : it?.data
+            return `<div><span style="display:inline-block;margin-right:6px;border-radius:10px;width:10px;height:10px;background-color:${it.color};"></span>${it.seriesName}<span style="float:right;font-weight:900">${format2(raw)}</span></div>`
+          })
+          .join('')
+        return lines ? `<div style="font-weight:700;margin-bottom:6px">${title}</div>${lines}` : title
+      },
     },
     legend: { top: 0 },
     grid: { left: '3%', right: '4%', bottom: '3%', top: 48, containLabel: true },

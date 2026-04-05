@@ -1,7 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import type { RouteRecordRaw } from 'vue-router'
 import Dashboard from '../views/Dashboard.vue'
 
-const routes = [
+const routes: RouteRecordRaw[] = [
   {
     path: '/',
     name: 'Welcome',
@@ -30,7 +31,7 @@ const routes = [
   {
     path: '/prediction',
     name: 'Prediction',
-    component: () => import('../views/Prediction.vue')
+    redirect: { path: '/players', query: { tab: 'predict' } }
   },
   {
     path: '/prediction/match',

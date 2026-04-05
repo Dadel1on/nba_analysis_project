@@ -2,137 +2,151 @@
   <div class="player-analysis-container">
     <div class="page-header">
       <div class="header-content">
-        <h1>球员数据探查</h1>
-        <p class="subtitle">深度检索 NBA 球员历史表现、场均数据与所属球队信息</p>
+        <h1>球员中心</h1>
+        <p class="subtitle">球员数据探查与表现预测一体化工作台</p>
       </div>
     </div>
 
-    <el-card shadow="never" class="search-card">
-      <div class="search-wrapper">
-        <el-input 
-          v-model="searchQuery" 
-          placeholder="输入球员姓名进行搜索 (例如: LeBron James)" 
-          class="custom-search-input"
-          @keyup.enter="handleSearch"
-          clearable
-        >
-          <template #prefix>
-            <el-icon><Search /></el-icon>
-          </template>
-        </el-input>
-        <el-button type="primary" class="search-btn" :icon="Search" @click="handleSearch" :loading="loading">
-          立即搜索
-        </el-button>
-      </div>
-    </el-card>
-
-    <el-alert
-      v-if="errorMessage"
-      :title="errorMessage"
-      type="error"
-      show-icon
-      closable
-      class="error-alert"
-    />
-
-    <el-card shadow="always" class="list-card">
-      <template #header>
-        <div class="card-header">
-          <span class="header-title">
-            <el-icon><User /></el-icon> 球员名录
-          </span>
-          <span v-if="players.length" class="result-count">找到 {{ players.length }} 名球员</span>
-        </div>
-      </template>
-
-      <el-table 
-        v-loading="loading"
-        :data="players" 
-        style="width: 100%" 
-        class="modern-table"
-        row-class-name="player-row"
-      >
-        <el-table-column label="球员信息" min-width="250">
-          <template #default="scope">
-            <div class="player-info-cell">
-              <div class="player-avatar-mini" :style="{ backgroundColor: getTeamColor(scope.row.team) }">
-                {{ scope.row.name.charAt(0) }}
-              </div>
-              <div class="player-meta">
-                <span class="p-name-main">{{ scope.row.name }}</span>
-                <span v-if="scope.row.position" class="p-position-sub">{{ scope.row.position }}</span>
-              </div>
-            </div>
-          </template>
-        </el-table-column>
-        
-        <el-table-column label="所属球队" min-width="180">
-          <template #default="scope">
-            <div class="team-tag-wrapper">
-              <el-tag :type="scope.row.team ? 'info' : 'warning'" effect="plain" round size="small">
-                {{ scope.row.team || '自由球员' }}
-              </el-tag>
-            </div>
-          </template>
-        </el-table-column>
-
-        <el-table-column label="场均数据 (得/篮/助)" min-width="220" align="center">
-          <template #default="scope">
-            <div class="stats-badges">
-              <el-tooltip content="场均得分" placement="top">
-                <span class="stat-badge pts">{{ format2(scope.row.stats.points) }}</span>
-              </el-tooltip>
-              <el-tooltip content="场均篮板" placement="top">
-                <span class="stat-badge reb">{{ format2(scope.row.stats.rebounds) }}</span>
-              </el-tooltip>
-              <el-tooltip content="场均助攻" placement="top">
-                <span class="stat-badge ast">{{ format2(scope.row.stats.assists) }}</span>
-              </el-tooltip>
-            </div>
-          </template>
-        </el-table-column>
-
-        <el-table-column label="操作" width="120" align="center" fixed="right">
-          <template #default="scope">
-            <el-button 
-              type="primary" 
-              link 
-              class="view-btn"
-              @click="viewDetails(scope.row)"
+    <el-tabs v-model="activeTab" class="player-tabs" stretch>
+      <el-tab-pane label="数据探查" name="browse">
+        <el-card shadow="never" class="search-card">
+          <div class="search-wrapper">
+            <el-input 
+              v-model="searchQuery" 
+              placeholder="输入球员姓名进行搜索 (例如: LeBron James)" 
+              class="custom-search-input"
+              @keyup.enter="handleSearch"
+              clearable
             >
-              详情分析 <el-icon class="el-icon--right"><ArrowRight /></el-icon>
+              <template #prefix>
+                <el-icon><Search /></el-icon>
+              </template>
+            </el-input>
+            <el-button type="primary" class="search-btn" :icon="Search" @click="handleSearch" :loading="loading">
+              立即搜索
             </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+          </div>
+        </el-card>
 
-      <div v-if="!loading && !players.length" class="empty-state">
-        <el-empty description="未找到相关球员数据，请尝试其他关键词" />
-      </div>
-
-      <div v-if="players.length > 0" class="pagination-footer">
-        <el-pagination
-          v-model:current-page="currentPage"
-          v-model:page-size="pageSize"
-          :page-sizes="[10, 20, 50, 100]"
-          layout="total, sizes, prev, pager, next, jumper"
-          :total="total"
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
+        <el-alert
+          v-if="errorMessage"
+          :title="errorMessage"
+          type="error"
+          show-icon
+          closable
+          class="error-alert"
         />
-      </div>
-    </el-card>
+
+        <el-card shadow="always" class="list-card">
+          <template #header>
+            <div class="card-header">
+              <span class="header-title">
+                <el-icon><User /></el-icon> 球员名录
+              </span>
+              <span v-if="players.length" class="result-count">找到 {{ players.length }} 名球员</span>
+            </div>
+          </template>
+
+          <el-table 
+            v-loading="loading"
+            :data="players" 
+            style="width: 100%" 
+            class="modern-table"
+            row-class-name="player-row"
+          >
+            <el-table-column label="球员信息" min-width="250">
+              <template #default="scope">
+                <div class="player-info-cell">
+                  <div class="player-avatar-mini" :style="{ backgroundColor: getTeamColor(scope.row.team) }">
+                    {{ scope.row.name.charAt(0) }}
+                  </div>
+                  <div class="player-meta">
+                    <span class="p-name-main">{{ scope.row.name }}</span>
+                    <span v-if="scope.row.position" class="p-position-sub">{{ scope.row.position }}</span>
+                  </div>
+                </div>
+              </template>
+            </el-table-column>
+            
+            <el-table-column label="所属球队" min-width="180">
+              <template #default="scope">
+                <div class="team-tag-wrapper">
+                  <el-tag :type="scope.row.team ? 'info' : 'warning'" effect="plain" round size="small">
+                    {{ scope.row.team || '自由球员' }}
+                  </el-tag>
+                </div>
+              </template>
+            </el-table-column>
+
+            <el-table-column label="场均数据 (得/篮/助)" min-width="220" align="center">
+              <template #default="scope">
+                <div class="stats-badges">
+                  <el-tooltip content="场均得分" placement="top">
+                    <span class="stat-badge pts">{{ format2(scope.row.stats.points) }}</span>
+                  </el-tooltip>
+                  <el-tooltip content="场均篮板" placement="top">
+                    <span class="stat-badge reb">{{ format2(scope.row.stats.rebounds) }}</span>
+                  </el-tooltip>
+                  <el-tooltip content="场均助攻" placement="top">
+                    <span class="stat-badge ast">{{ format2(scope.row.stats.assists) }}</span>
+                  </el-tooltip>
+                </div>
+              </template>
+            </el-table-column>
+
+            <el-table-column label="操作" width="120" align="center" fixed="right">
+              <template #default="scope">
+                <el-button 
+                  type="primary" 
+                  link 
+                  class="view-btn"
+                  @click="viewDetails(scope.row)"
+                >
+                  详情分析 <el-icon class="el-icon--right"><ArrowRight /></el-icon>
+                </el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+
+          <div v-if="!loading && !players.length" class="empty-state">
+            <el-empty description="未找到相关球员数据，请尝试其他关键词" />
+          </div>
+
+          <div v-if="players.length > 0" class="pagination-footer">
+            <el-pagination
+              v-model:current-page="currentPage"
+              v-model:page-size="pageSize"
+              :page-sizes="[10, 20, 50, 100]"
+              layout="total, sizes, prev, pager, next, jumper"
+              :total="total"
+              @size-change="handleSizeChange"
+              @current-change="handleCurrentChange"
+            />
+          </div>
+        </el-card>
+      </el-tab-pane>
+
+      <el-tab-pane label="表现预测" name="predict">
+        <PredictionView embedded />
+      </el-tab-pane>
+    </el-tabs>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import type { LocationQueryRaw } from 'vue-router'
 import { Search, User, ArrowRight } from '@element-plus/icons-vue'
 import { searchPlayers } from '@/api/players'
 import type { PlayerSummary } from '@/api/types'
+import PredictionView from './Prediction.vue'
 
+const route = useRoute()
 const router = useRouter()
+const activeTab = ref<'browse' | 'predict'>(
+  route.query.tab === 'predict' || route.query.tab === 'prediction' ? 'predict' : 'browse'
+)
 const searchQuery = ref('')
 const players = ref<PlayerSummary[]>([])
 const loading = ref(false)
@@ -205,7 +219,29 @@ const viewDetails = (player: PlayerSummary) => {
 }
 
 onMounted(() => {
-  fetchPlayers()
+  if (activeTab.value === 'browse') fetchPlayers()
+})
+
+watch(
+  () => route.query.tab,
+  (tab) => {
+    const next = tab === 'predict' || tab === 'prediction' ? 'predict' : 'browse'
+    if (activeTab.value !== next) activeTab.value = next
+  }
+)
+
+watch(activeTab, (tab) => {
+  const desired = tab === 'predict' ? 'predict' : undefined
+  const current = typeof route.query.tab === 'string' ? route.query.tab : undefined
+  const isSame = desired === current || (desired === undefined && current === undefined)
+  if (isSame) return
+
+  const query: LocationQueryRaw = { ...route.query }
+  if (desired) query.tab = desired
+  else delete query.tab
+  router.replace({ path: route.path, query })
+
+  if (tab === 'browse' && !loading.value && players.value.length === 0) fetchPlayers()
 })
 </script>
 

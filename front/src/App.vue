@@ -28,7 +28,7 @@
         
         <el-menu-item index="/players">
           <el-icon><User /></el-icon>
-          <span>球员数据探查</span>
+          <span>球员中心</span>
         </el-menu-item>
         
         <el-menu-item index="/teams">
@@ -36,24 +36,15 @@
           <span>球队数据对比</span>
         </el-menu-item>
         
-        <el-sub-menu index="/prediction">
-          <template #title>
-            <el-icon><TrendCharts /></el-icon>
-            <span>分析与预测</span>
-          </template>
-          <el-menu-item index="/prediction">
-            <el-icon><DataLine /></el-icon>
-            <span>球员表现预测</span>
-          </el-menu-item>
-          <el-menu-item index="/prediction/match">
-            <el-icon><Flag /></el-icon>
-            <span>比赛结果预测</span>
-          </el-menu-item>
-          <el-menu-item index="/spark-analysis">
-            <el-icon><Cpu /></el-icon>
-            <span>Spark 离线分析</span>
-          </el-menu-item>
-        </el-sub-menu>
+        <el-menu-item index="/prediction/match">
+          <el-icon><Flag /></el-icon>
+          <span>比赛结果预测</span>
+        </el-menu-item>
+
+        <el-menu-item index="/spark-analysis">
+          <el-icon><Cpu /></el-icon>
+          <span>Spark 离线分析</span>
+        </el-menu-item>
 
         <div class="menu-divider"></div>
         
@@ -103,7 +94,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { DataBoard, User, Trophy, TrendCharts, Setting, Cpu, DataLine, Flag } from '@element-plus/icons-vue'
+import { DataBoard, User, Trophy, Setting, Cpu, Flag } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -114,7 +105,7 @@ const currentRouteName = computed(() => {
   if (route.path.startsWith('/players/')) return '球员详情'
   const nameMap: Record<string, string> = {
     '/dashboard': '数据仪表盘',
-    '/players': '球员数据探查',
+    '/players': '球员中心',
     '/teams': '球队数据对比',
     '/prediction': '球员表现预测',
     '/prediction/match': '比赛结果预测',
@@ -334,4 +325,3 @@ html, body {
 
 .welcome-view { width: 100vw; height: 100vh; }
 </style>
-

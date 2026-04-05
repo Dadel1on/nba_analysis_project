@@ -413,7 +413,7 @@ const initOrUpdateCharts = () => {
             left: 'center',
             top: 'center',
             style: {
-              text: `${positionTotal.value}\nPLAYERS`,
+              text: `${positionTotal.value}\n球员`,
               fill: 'rgba(0,0,0,0.65)',
               fontSize: 16,
               fontWeight: 900,
