@@ -5,7 +5,7 @@
         <h1>数据仪表盘</h1>
         <div class="status-badge">
           <span class="pulse-dot"></span>
-          LIVE DATA
+          实时数据
         </div>
       </div>
       <p class="header-subtitle">实时监控全联盟球员动态、核心表现指标及即时赛况</p>

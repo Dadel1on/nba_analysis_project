@@ -297,10 +297,18 @@ const format2 = (value: unknown) => {
 const fetchPlayers = async () => {
   loadingPlayers.value = true
   try {
-    players.value = await searchPlayers({
+    const data = await searchPlayers({
       name: searchName.value,
       page: 1,
       limit: 50,
+    })
+    // 过滤掉位置未知的球员
+    players.value = data.filter(p => {
+      const pos = p.position?.toLowerCase() || ''
+      return pos && 
+             !pos.includes('未知') && 
+             !pos.includes('unknown') && 
+             !pos.includes('unk')
     })
   } catch {
     players.value = []

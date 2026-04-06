@@ -611,8 +611,13 @@ public class NbaDataService {
             SELECT fpg.player_id
             FROM fact_player_game fpg
             JOIN fact_game fg ON fpg.game_id = fg.game_id
+            JOIN fact_player_season fps ON fpg.player_id = fps.player_id AND fg.season_year = fps.season_year
             GROUP BY fpg.player_id
-            ORDER BY MAX(fg.season_year) DESC, MAX(fg.game_date) DESC, MAX(fpg.id) DESC
+            ORDER BY 
+              MAX(fg.season_year) DESC, 
+              MAX(fps.avg_points) DESC,
+              COUNT(DISTINCT fg.season_year) DESC,
+              MAX(fg.game_date) DESC
             LIMIT ? OFFSET ?
             """,
         (rs, rowNum) -> rs.getLong(1),
@@ -624,32 +629,74 @@ public class NbaDataService {
       return List.of();
     }
 
+    List<PlayerSummary> result = new ArrayList<>();
+    if (playerIds.isEmpty()) return result;
+
     String placeholders = playerIds.stream().map(v -> "?").collect(Collectors.joining(","));
-    List<PlayerRow> rows = jdbcTemplate.query(
+    
+    // 1. 批量查询基本信息
+    Map<Long, PlayerRow> playerInfoMap = jdbcTemplate.query(
         "SELECT player_id, full_name, position FROM dim_player WHERE player_id IN (" + placeholders + ")",
-        (rs, rowNum) -> new PlayerRow(rs.getLong(1), rs.getString(2), rs.getString(3)),
+        rs -> {
+            Map<Long, PlayerRow> map = new HashMap<>();
+            while (rs.next()) {
+                long id = rs.getLong(1);
+                map.put(id, new PlayerRow(id, rs.getString(2), rs.getString(3)));
+            }
+            return map;
+        },
         playerIds.toArray()
     );
 
-    Map<Long, PlayerRow> byId = new HashMap<>();
-    if (rows != null) {
-      for (PlayerRow row : rows) {
-        byId.put(row.id(), row);
-      }
-    }
+    // 2. 批量查询赛季统计数据
+    Map<Long, PlayerStats> statsMap = jdbcTemplate.query(
+        "SELECT fps.player_id, fps.avg_points, fps.avg_rebounds, fps.avg_assists " +
+        "FROM fact_player_season fps " +
+        "JOIN ( " +
+        "    SELECT player_id, MAX(season_year) as max_year " +
+        "    FROM fact_player_season " +
+        "    WHERE player_id IN (" + placeholders + ") " +
+        "    GROUP BY player_id " +
+        ") latest ON fps.player_id = latest.player_id AND fps.season_year = latest.max_year",
+        rs -> {
+            Map<Long, PlayerStats> map = new HashMap<>();
+            while (rs.next()) {
+                map.put(rs.getLong(1), new PlayerStats(rs.getDouble(2), rs.getDouble(3), rs.getDouble(4)));
+            }
+            return map;
+        },
+        playerIds.toArray()
+    );
 
-    List<PlayerSummary> result = new ArrayList<>();
+    // 3. 批量查询球队名称 (简化逻辑，取最近一场比赛的球队)
+    Map<Long, String> teamMap = jdbcTemplate.query(
+        "SELECT fpg.player_id, dt.team_name " +
+        "FROM fact_player_game fpg " +
+        "JOIN dim_team dt ON fpg.team_id = dt.team_id " +
+        "JOIN ( " +
+        "    SELECT player_id, MAX(id) as max_id " +
+        "    FROM fact_player_game " +
+        "    WHERE player_id IN (" + placeholders + ") " +
+        "    GROUP BY player_id " +
+        ") latest ON fpg.id = latest.max_id",
+        rs -> {
+            Map<Long, String> map = new HashMap<>();
+            while (rs.next()) {
+                map.put(rs.getLong(1), rs.getString(2));
+            }
+            return map;
+        },
+        playerIds.toArray()
+    );
+
     for (Long id : playerIds) {
-      PlayerRow row = byId.get(id);
-      if (row == null) {
-        continue;
-      }
-      PlayerStats stats = latestPlayerSeasonStats(row.id());
-      if (stats == null) {
-        stats = new PlayerStats(0.0, 0.0, 0.0);
-      }
-      String team = normalized(playerTeamName(row.id()));
-      result.add(new PlayerSummary(row.id(), row.name(), team, normalized(row.position()), stats));
+      PlayerRow row = playerInfoMap.get(id);
+      if (row == null) continue;
+      
+      PlayerStats stats = statsMap.getOrDefault(id, new PlayerStats(0.0, 0.0, 0.0));
+      String team = normalized(teamMap.getOrDefault(id, "自由球员"));
+      
+      result.add(new PlayerSummary(id, row.name(), team, normalized(row.position()), stats));
     }
     return result;
   }
@@ -983,13 +1030,18 @@ public class NbaDataService {
     }
     // Map common abbreviations to more readable names
     return switch (trimmed.toUpperCase(Locale.ROOT)) {
-      case "G" -> "后卫 (G)";
-      case "F" -> "前锋 (F)";
-      case "C" -> "中锋 (C)";
-      case "G-F" -> "后卫-前锋 (G-F)";
-      case "F-G" -> "前锋-后卫 (F-G)";
-      case "F-C" -> "前锋-中锋 (F-C)";
-      case "C-F" -> "中锋-前锋 (C-F)";
+      case "G", "GUARD" -> "后卫 (G)";
+      case "F", "FORWARD" -> "前锋 (F)";
+      case "C", "CENTER" -> "中锋 (C)";
+      case "PG", "POINT GUARD" -> "控球后卫 (PG)";
+      case "SG", "SHOOTING GUARD" -> "得分后卫 (SG)";
+      case "SF", "SMALL FORWARD" -> "小前锋 (SF)";
+      case "PF", "POWER FORWARD" -> "大前锋 (PF)";
+      case "UNK", "UNKNOWN" -> "未知 (UNK)";
+      case "G-F", "GUARD-FORWARD" -> "后卫-前锋 (G-F)";
+      case "F-G", "FORWARD-GUARD" -> "前锋-后卫 (F-G)";
+      case "F-C", "FORWARD-CENTER" -> "前锋-中锋 (F-C)";
+      case "C-F", "CENTER-FORWARD" -> "中锋-前锋 (C-F)";
       default -> trimmed;
     };
   }

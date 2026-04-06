@@ -43,7 +43,12 @@
               <span class="header-title">
                 <el-icon><User /></el-icon> 球员名录
               </span>
-              <span v-if="players.length" class="result-count">找到 {{ players.length }} 名球员</span>
+              <div class="header-actions">
+                <span v-if="players.length" class="result-count">找到 {{ players.length }} 名球员</span>
+                <el-button :icon="Refresh" :loading="loading" :disabled="loading" @click="handleRefresh">
+                  刷新
+                </el-button>
+              </div>
             </div>
           </template>
 
@@ -137,7 +142,7 @@
 import { onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { LocationQueryRaw } from 'vue-router'
-import { Search, User, ArrowRight } from '@element-plus/icons-vue'
+import { Search, User, ArrowRight, Refresh } from '@element-plus/icons-vue'
 import { searchPlayers } from '@/api/players'
 import type { PlayerSummary } from '@/api/types'
 import PredictionView from './Prediction.vue'
@@ -154,6 +159,7 @@ const errorMessage = ref('')
 const currentPage = ref(1)
 const pageSize = ref(20)
 const total = ref(0) // Note: Backend searchPlayers currently doesn't return total count in the payload, but we'll use a placeholder or update it later.
+const lastQueryKey = ref<string | null>(null)
 
 const getTeamColor = (teamName: string | null) => {
   if (!teamName) return '#909399'
@@ -179,20 +185,34 @@ const format2 = (value: unknown) => {
 
 const handleSearch = () => {
   currentPage.value = 1
-  fetchPlayers()
+  fetchPlayers({ force: true })
 }
 
 const handleSizeChange = (val: number) => {
   pageSize.value = val
-  fetchPlayers()
+  fetchPlayers({ force: true })
 }
 
 const handleCurrentChange = (val: number) => {
   currentPage.value = val
-  fetchPlayers()
+  fetchPlayers({ force: true })
 }
 
-const fetchPlayers = async () => {
+const handleRefresh = () => {
+  fetchPlayers({ force: true })
+}
+
+const fetchPlayers = async (options?: { force?: boolean }) => {
+  if (loading.value) return
+
+  const queryKey = JSON.stringify({
+    name: searchQuery.value,
+    page: currentPage.value,
+    limit: pageSize.value,
+  })
+
+  if (!options?.force && lastQueryKey.value === queryKey && players.value.length > 0) return
+
   loading.value = true
   errorMessage.value = ''
   try {
@@ -201,11 +221,19 @@ const fetchPlayers = async () => {
       page: currentPage.value,
       limit: pageSize.value,
     })
-    players.value = data
+    // 过滤掉位置未知的球员
+    players.value = data.filter(p => {
+      const pos = p.position?.toLowerCase() || ''
+      return pos && 
+             !pos.includes('未知') && 
+             !pos.includes('unknown') && 
+             !pos.includes('unk')
+    })
     // Total count is currently not returned by API as a separate field in searchPlayers, 
     // assuming it might be added or we can just use the length for now if it's small.
     // In a real scenario, the API should return { list, total }.
     total.value = data.length < pageSize.value ? (currentPage.value - 1) * pageSize.value + data.length : 1000 
+    lastQueryKey.value = queryKey
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '加载球员数据失败'
     players.value = []
@@ -310,6 +338,12 @@ watch(activeTab, (tab) => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .header-title {

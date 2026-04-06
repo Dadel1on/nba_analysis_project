@@ -21,7 +21,7 @@
 
           <div class="team-selection-box">
             <div class="selection-item">
-              <label>主队 (Home)</label>
+              <label>主队 (主场)</label>
               <el-select
                 v-model="homeTeam"
                 placeholder="选择主队"
@@ -47,7 +47,7 @@
             </div>
 
             <div class="selection-item">
-              <label>客队 (Away)</label>
+              <label>客队 (客场)</label>
               <el-select
                 v-model="awayTeam"
                 placeholder="选择客队"
