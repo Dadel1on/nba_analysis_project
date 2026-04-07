@@ -22,6 +22,7 @@
 
 - [x] API 契约文档：docs/API_CONTRACT.md
 - [x] README 运行与接口说明
+- [x] 文档索引：docs/文档索引.md
 - [x] 回退策略保证演示可运行
 
 ## 演示建议流程

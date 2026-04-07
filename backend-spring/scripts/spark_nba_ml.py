@@ -70,8 +70,11 @@ def main():
     }
 
     print(f"Writing prediction results directly to MariaDB on master...")
-    # 使用 overwrite 模式更新预测快照
-    final_output.write.jdbc(url=mysql_url, table="prediction_snapshot", mode="overwrite", properties=properties)
+    # 覆盖数据但保留既有表结构，避免丢失自增主键等约束
+    final_output.write \
+        .mode("overwrite") \
+        .option("truncate", "true") \
+        .jdbc(url=mysql_url, table="prediction_snapshot", properties=properties)
     print("Spark job finished successfully and results are synced to DB.")
 
     spark.stop()

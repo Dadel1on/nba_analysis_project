@@ -2,9 +2,14 @@
 
 本文件定义当前前端实现依赖的接口协议，供后端联调使用。
 
+相关文档：
+
+- [文档索引](../../docs/%E6%96%87%E6%A1%A3%E7%B4%A2%E5%BC%95.md)
+- [前端交付检查清单](DELIVERY_CHECKLIST.md)
+
 ## 通用响应格式
 
-推荐统一返回：
+统一返回格式：
 
 ```json
 {
@@ -14,118 +19,183 @@
 }
 ```
 
-前端对部分接口支持兼容模式：既支持 `data` 包裹，也支持直接返回业务对象。
+说明：
+
+- `code=0` 表示成功。
+- `message` 用于展示提示或错误说明。
+- `data` 承载业务数据，部分接口也兼容直接返回对象。
 
 ## 1. 仪表盘
 
 ### GET /api/dashboard/overview
 
-- 用途：仪表盘总览
-- 兼容字段命名：camelCase / snake_case
+用途：仪表盘总览。
 
-示例（推荐）：
+返回数据结构：
 
-```json
-{
-  "code": 0,
-  "message": "ok",
-  "data": {
-    "stats": {
-      "activePlayers": 450,
-      "teams": 30,
-      "seasonGames": 1230,
-      "predictions": 1525
-    },
-    "trend": [
-      { "season": "2021", "avgPoints": 110.6 },
-      { "season": "2022", "avgPoints": 114.7 },
-      { "season": "2023", "avgPoints": 115.4 }
-    ],
-    "positionDistribution": [
-      { "name": "后卫 (G)", "value": 120 },
-      { "name": "前锋 (F)", "value": 150 }
-    ],
-    "recentGames": [
-      { "date": "2026-03-22", "homeTeam": "湖人", "awayTeam": "勇士", "score": "116-112" }
-    ],
-    "topPlayers": [
-      { "name": "Player A", "team": "LAL", "points": 30.5 }
-    ]
+```ts
+interface DashboardPayload {
+  stats: {
+    activePlayers: number
+    teams: number
+    seasonGames: number
+    predictions: number
   }
+  trend: Array<{
+    season: string
+    avgPoints: number
+  }>
+  positionDistribution: Array<{
+    name: string
+    value: number
+  }>
+  recentGames: Array<{
+    date: string
+    homeTeam: string
+    awayTeam: string
+    score: string
+  }>
+  topPlayers: Array<{
+    name: string
+    team: string
+    points: number
+  }>
 }
 ```
+
+常见字段说明：
+
+- `stats.activePlayers`：活跃球员数
+- `stats.teams`：球队数，当前期望为 30
+- `stats.seasonGames`：赛季比赛总数
+- `stats.predictions`：预测记录数
+- `trend`：赛季均值趋势
+- `positionDistribution`：位置分布
+- `recentGames`：近期比赛列表
+- `topPlayers`：球员排行榜
+
+### GET /api/dashboard/games
+
+用途：分页获取近期比赛。
+
+查询参数：
+
+- `page?: number`，默认 `1`
+- `limit?: number`，默认 `20`
+
+返回数据结构：
+
+```ts
+interface PaginatedPayload<T> {
+  items: T[]
+  page: number
+  limit: number
+  total: number
+}
+```
+
+单条比赛结构与仪表盘中的 `recentGames` 一致。
+
+### GET /api/dashboard/rankings
+
+用途：分页获取球员排行榜。
+
+查询参数：
+
+- `page?: number`，默认 `1`
+- `limit?: number`，默认 `20`
+
+单条排行榜结构与 `topPlayers` 一致。
 
 ## 2. 球员
 
 ### GET /api/players
 
 查询参数：
+
 - `name?: string`
-- `page?: number`
-- `limit?: number`
+- `page?: number`，默认 `1`
+- `limit?: number`，默认 `20`
 
-响应示例：
+返回数据结构：
 
-```json
-{
-  "data": {
-    "players": [
-      {
-        "id": 1,
-        "name": "LeBron James",
-        "team": "Lakers",
-        "position": "F",
-        "stats": { "points": 27.1, "rebounds": 7.5, "assists": 7.4 }
-      }
-    ]
+```ts
+interface PlayerSummary {
+  id: number
+  name: string
+  team: string | null
+  position: string | null
+  stats: {
+    points: number
+    rebounds: number
+    assists: number
   }
 }
 ```
 
+说明：
+
+- `team` 可能为空，表示当前没有可用球队名。
+- `position` 可能为空或为 `UNK`，前端会展示为未知位置。
+
 ### GET /api/players/:id
 
-响应可返回单对象或 `players` 数组，前端均可兼容。
+用途：根据球员 ID 获取详情。
+
+返回结构与 `PlayerSummary` 一致。
+
+响应策略：
+
+- 找不到球员时返回 HTTP `404`，body 为 `ApiResponse`，`message` 为 `Player not found`。
 
 ## 3. 球队
 
 ### GET /api/teams
 
-响应示例：
+用途：获取球队列表。
 
-```json
-{
-  "data": {
-    "teams": [
-      { "id": 1, "name": "Lakers", "city": "Los Angeles", "conference": "West" }
-    ]
-  }
+返回数据结构：
+
+```ts
+interface TeamSummary {
+  id?: number
+  name: string
+  city: string
+  conference: string
 }
 ```
+
+说明：
+
+- `conference` 当前应返回 `East` 或 `West`。
+- 如果后端数据完整，球队数量应为 30。
 
 ### POST /api/teams/compare
 
+用途：对比两支球队的赛季表现。
+
 请求体：
 
-```json
-{
-  "teams": ["Lakers", "Warriors"],
-  "season": 2025,
-  "metric": "all"
+```ts
+interface TeamCompareRequest {
+  teams: [string, string]
+  season?: number
+  metric?: 'all' | 'offense' | 'defense'
 }
 ```
 
-`metric` 可选值：`all | offense | defense`
+返回数据结构：
 
-响应示例：
-
-```json
-{
-  "data": {
-    "teams": [
-      { "team": "Lakers", "points": 114.2, "rebounds": 44.1, "assists": 26.3, "wins": 51, "winRate": 0.622 },
-      { "team": "Warriors", "points": 116.8, "rebounds": 43.3, "assists": 29.1, "wins": 49, "winRate": 0.598 }
-    ]
-  }
+```ts
+interface TeamComparisonResult {
+  teams: Array<{
+    team: string
+    points: number
+    rebounds: number
+    assists: number
+    wins: number
+    winRate: number
+  }>
 }
 ```
 
@@ -135,19 +205,23 @@
 
 请求体：
 
-```json
-{ "player_id": 1 }
+```ts
+interface PlayerPredictionRequest {
+  player_id: number
+}
 ```
 
-响应示例：
+返回数据结构：
 
-```json
-{
-  "data": {
-    "player_id": 1,
-    "predicted_stats": { "points": 29.2, "rebounds": 8.1, "assists": 7.0 },
-    "confidence": 0.87
+```ts
+interface PlayerPredictionResult {
+  player_id: number
+  predicted_stats: {
+    points: number
+    rebounds: number
+    assists: number
   }
+  confidence: number
 }
 ```
 
@@ -155,22 +229,23 @@
 
 请求体：
 
-```json
-{ "home_team": "Lakers", "away_team": "Warriors" }
+```ts
+interface MatchPredictionRequest {
+  home_team: string
+  away_team: string
+}
 ```
 
-响应示例：
+返回数据结构：
 
-```json
-{
-  "data": {
-    "home_team": "Lakers",
-    "away_team": "Warriors",
-    "home_win_probability": 0.56,
-    "away_win_probability": 0.44,
-    "confidence": 0.82,
-    "key_factors": ["主场优势", "近期防守效率"]
-  }
+```ts
+interface MatchPredictionResult {
+  home_team: string
+  away_team: string
+  home_win_probability: number
+  away_win_probability: number
+  confidence: number
+  key_factors?: string[]
 }
 ```
 
@@ -178,41 +253,46 @@
 
 请求体：
 
-```json
-{ "player_id": 1 }
+```ts
+interface SeasonPredictionRequest {
+  player_id: number
+}
 ```
 
-响应示例：
+返回数据结构：
 
-```json
-{
-  "data": {
-    "player_id": 1,
-    "history": [
-      { "season": "2021", "points": 25.1, "rebounds": 7.2, "assists": 6.1 }
-    ],
-    "forecast": [
-      { "season": "2024", "points": 28.2, "rebounds": 8.0, "assists": 7.0 }
-    ]
-  }
+```ts
+interface SeasonTrendPredictionResult {
+  player_id: number
+  history: Array<{
+    season: string
+    points: number
+    rebounds: number
+    assists: number
+  }>
+  forecast: Array<{
+    season: string
+    points: number
+    rebounds: number
+    assists: number
+  }>
 }
 ```
 
 ### GET /api/prediction/explain/player?player_id=1
 
-响应示例：
+返回数据结构：
 
-```json
-{
-  "data": {
-    "player_id": 1,
-    "model_name": "Baseline-Regression-Model",
-    "model_version": "v1.2.0",
-    "key_factors": [
-      { "factor": "近5场得分均值", "contribution": 0.32, "direction": "positive" },
-      { "factor": "对手防守效率", "contribution": -0.14, "direction": "negative" }
-    ]
-  }
+```ts
+interface PredictionExplainability {
+  player_id: number
+  model_name: string
+  model_version: string
+  key_factors: Array<{
+    factor: string
+    contribution: number
+    direction: 'positive' | 'negative'
+  }>
 }
 ```
 
@@ -220,26 +300,66 @@
 
 ### POST /api/admin/upload
 
-- Content-Type: `multipart/form-data`
-- 字段：`file`
+用途：上传 CSV 文件并记录导入历史。
 
-### GET /api/admin/upload/history
+请求：
 
-响应示例：
+- `Content-Type: multipart/form-data`
+- 字段名：`file`
 
-```json
-{
-  "data": [
-    { "fileName": "players_2024.csv", "rows": 4280, "status": "success", "createdAt": "2026-03-24 09:10:43" }
-  ]
+响应结构：
+
+```ts
+interface UploadHistoryItem {
+  fileName: string
+  rows: number
+  status: 'success' | 'failed' | 'processing'
+  createdAt: string
 }
 ```
 
-## 错误约定
+### GET /api/admin/upload/history
 
-推荐后端统一使用 HTTP 状态码 + `message`：
-- 400: 参数错误
-- 404: 资源不存在
-- 500: 服务内部错误
+用途：获取上传历史记录。
 
-前端会展示 `message`，并在请求失败时提供兜底提示。
+### GET /api/admin/system/status
+
+用途：查看当前数据源状态与基础统计。
+
+### POST /api/admin/spark/run
+
+用途：异步触发 Spark 作业。
+
+### GET /api/admin/spark/history
+
+用途：查看 Spark 作业历史。
+
+### GET /api/admin/spark/predictions
+
+用途：查看最近的 Spark 预测结果。
+
+## 6. 错误约定
+
+推荐后端统一使用 HTTP 状态码配合 `message`：
+
+- `400`：参数错误
+- `404`：资源不存在
+- `500`：服务内部错误
+
+前端在请求失败时展示 `message`，并保留兜底回退数据。
+
+## 7. 与前端类型的对应关系
+
+前端 `src/api/types.ts` 中的核心类型与本协议一一对应：
+
+- `DashboardPayload`
+- `PlayerSummary`
+- `TeamSummary`
+- `TeamComparisonResult`
+- `PlayerPredictionResult`
+- `MatchPredictionResult`
+- `SeasonTrendPredictionResult`
+- `PredictionExplainability`
+- `UploadHistoryItem`
+- `SparkJobRunItem`
+- `PredictionResultItem`

@@ -5,18 +5,20 @@
 本文档用于固化本项目的数据处理 SOP，覆盖以下完整链路：
 
 1. 从 Kaggle 下载原始数据
-2. 原始数据清洗与预处理
-3. 分区/分表导出为可导入 CSV
-4. 使用 Navicat 16 导入到 MariaDB 5.5
-5. 执行一键验收 SQL，确认数据质量
+2. 识别当前仓库保留的数据脚本与表结构
+3. 将原始 CSV 导入 MariaDB
+4. 执行索引优化、指标回填和维度补齐
+5. 验证前后端接口展示是否符合预期
 6. 常见问题与修复方案
 
 适用环境：
 
 - OS：Windows
-- 数据库：MariaDB 5.5.68
-- 工具：Navicat 16
+- 数据库：MariaDB 5.5.68 或 MySQL 8+
+- 工具：Navicat 16、MySQL 命令行或自定义导入脚本
 - 项目根目录：D:/Software/nba_analysis_project
+
+> 说明：当前工作区不再包含早期的 CSV 预处理脚本 `preprocess_for_navicat.py`，因此本文档会以“原始数据 + 数据库脚本 + Spark 脚本”的方式描述当前可复现流程。
 
 ---
 
@@ -46,37 +48,33 @@
 
 ## 3. 清洗与预处理
 
-### 3.1 使用项目内清洗脚本
+### 3.1 当前仓库的可用脚本
 
-脚本位置：
+当前仓库保留的脚本主要分为两类：
 
-- [backend-spring/scripts/preprocess_for_navicat.py](../backend-spring/scripts/preprocess_for_navicat.py)
+1. [backend-spring/scripts/sql/01_performance_indexes.sql](../backend-spring/scripts/sql/01_performance_indexes.sql)
+2. [backend-spring/scripts/sql/02_backfill_advanced_metrics.sql](../backend-spring/scripts/sql/02_backfill_advanced_metrics.sql)
+3. [backend-spring/scripts/sql/03_dimension_enrichment.sql](../backend-spring/scripts/sql/03_dimension_enrichment.sql)
+4. [backend-spring/scripts/spark_nba_ml.py](../backend-spring/scripts/spark_nba_ml.py)
 
-作用：
+这意味着：当前仓库已经具备“导入后优化”和“离线预测”能力，但原始 CSV 清洗与拆表导出逻辑需要由外部脚本或手工 ETL 完成。
 
-1. 读取 Kaggle 原始 CSV
-2. 转换字段命名与类型，映射到数据库目标表
-3. 生成分表 CSV（可直接导入 Navicat）
-4. 做外键安全过滤（避免导入后出现孤儿记录）
-5. 限定赛季范围（当前脚本为 2014+）
+### 3.2 建议的导入方式
 
-### 3.2 执行命令
+对于 Kaggle 原始 CSV，建议采用以下顺序：
 
-在项目根目录执行：
+1. 先导入 `Players.csv`、`TeamHistories.csv`、`Games.csv`、`PlayerStatistics.csv` 等原始数据到临时表或目标表
+2. 再执行 [01_performance_indexes.sql](../backend-spring/scripts/sql/01_performance_indexes.sql) 提升查询性能
+3. 接着执行 [02_backfill_advanced_metrics.sql](../backend-spring/scripts/sql/02_backfill_advanced_metrics.sql) 回填缺失高级指标
+4. 最后执行 [03_dimension_enrichment.sql](../backend-spring/scripts/sql/03_dimension_enrichment.sql) 补齐维度字段
 
-```powershell
-python D:/Software/nba_analysis_project/backend-spring/scripts/preprocess_for_navicat.py
-```
-
-输出目录：
-
-- D:/Software/data/nba_cleaned_navicat
+如果你使用 Navicat 导入，可以直接从原始 CSV 生成表数据；如果你使用命令行或 ETL 工具，则优先保证字段类型与本文第 5 节一致。
 
 ---
 
-## 4. 分区/分表产物说明
+## 4. 历史分区/分表产物说明
 
-清洗后生成以下 CSV：
+这部分描述的是项目早期清洗流程中常见的导出结果，当前仓库不再包含对应的自动生成脚本；如果你有外部 ETL 或手工清洗流程，建议仍按这个结构组织中间产物：
 
 1. dim_team.csv
 2. dim_player.csv
@@ -92,7 +90,7 @@ python D:/Software/nba_analysis_project/backend-spring/scripts/preprocess_for_na
 说明：
 
 - 第 7~9 为业务表模板（通常初始为空）
-- 导入顺序必须先维表，再事实表，再业务表
+- 如果你通过外部 ETL 生成这些文件，导入顺序仍建议先维表，再事实表，再业务表
 
 ---
 
@@ -258,6 +256,17 @@ python D:/Software/nba_analysis_project/backend-spring/scripts/preprocess_for_na
 ---
 
 ## 6. 初始化数据库（无种子数据，生产推荐）
+
+当前仓库的 `schema.sql` 和 `data.sql` 更适合作为开发环境初始化基线；如果你已经有完整的 Kaggle 原始数据，推荐以原始导入为主，再执行后续 SQL 脚本补齐指标和维度。
+
+当前仓库可直接执行或复用的内容是：
+
+1. [backend-spring/src/main/resources/schema.sql](../backend-spring/src/main/resources/schema.sql)
+2. [backend-spring/src/main/resources/data.sql](../backend-spring/src/main/resources/data.sql)
+3. [backend-spring/scripts/sql/01_performance_indexes.sql](../backend-spring/scripts/sql/01_performance_indexes.sql)
+4. [backend-spring/scripts/sql/02_backfill_advanced_metrics.sql](../backend-spring/scripts/sql/02_backfill_advanced_metrics.sql)
+5. [backend-spring/scripts/sql/03_dimension_enrichment.sql](../backend-spring/scripts/sql/03_dimension_enrichment.sql)
+6. [backend-spring/scripts/spark_nba_ml.py](../backend-spring/scripts/spark_nba_ml.py)
 
 初始化脚本：
 
@@ -648,7 +657,7 @@ FROM fact_game;
 
 ## 12. 原始字段到目标表字段映射总表
 
-说明：以下映射与清洗脚本 [backend-spring/scripts/preprocess_for_navicat.py](../backend-spring/scripts/preprocess_for_navicat.py) 保持一致，用于说明每张表的数据来源与转换逻辑。
+说明：以下映射保留了历史清洗脚本的字段约定，用于说明每张表的数据来源与转换逻辑；当前工作区不再包含对应的自动预处理脚本，因此这里只作为复现参考。
 
 ### 12.1 dim_team 映射
 

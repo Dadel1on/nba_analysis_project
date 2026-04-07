@@ -1,192 +1,89 @@
 # NBA 分析项目
 
-该工作区现已包含完整前后端实现，并支持数据库持久化与 Spark 作业接口。
+这是一个面向 NBA 数据分析与预测的前后端分离项目，包含 Vue 前端、Spring Boot 后端、MySQL/MariaDB 数据层，以及用于离线预测的 Spark 脚本和 SQL 维护脚本。
 
-## 目录说明
+## 仓库结构
 
-- front：基于 Vue3 + Vite 的前端
-- backend-spring：基于 Spring Boot 的后端（JPA + MySQL + Spark API）
+- [front](front)：Vue 3 + Vite 前端，负责页面展示、图表和接口联调
+- [backend-spring](backend-spring)：Spring Boot 后端，负责 REST API、JPA 持久化和 Spark 任务编排
+- [docs](docs)：集群启动、数据处理和交付说明
 
-## 项目架构图
+## 关键入口
 
-```mermaid
-flowchart LR
-	U[用户浏览器]
-	FE[前端 Vue3 + Vite\nfront]
-	BE[后端 Spring Boot 3\nbackend-spring]
-	DB[(MySQL nba_stats)]
-	SP[Spark 集群/任务\napp.spark.submit-command]
-	DS[CSV/数据集]
-	IMP[导入脚本\nbackend-spring/scripts/import-eoin-dataset.ps1]
-
-	U -->|访问页面/操作| FE
-	FE -->|/api 代理请求| BE
-	BE -->|JPA 查询/写入| DB
-	BE -->|预测任务触发/状态回写| SP
-	DS -->|数据文件| IMP
-	IMP -->|初始化/导入| DB
-
-	subgraph Frontend
-		FE
-	end
-
-	subgraph Backend
-		BE
-	end
-
-	subgraph Data_And_Compute
-		DB
-		SP
-	end
-```
+- [backend-spring/src/main/resources/application.yml](backend-spring/src/main/resources/application.yml)：后端默认配置
+- [backend-spring/scripts/spark_nba_ml.py](backend-spring/scripts/spark_nba_ml.py)：Spark 预测脚本
+- [backend-spring/scripts/sql/01_performance_indexes.sql](backend-spring/scripts/sql/01_performance_indexes.sql)：索引优化
+- [backend-spring/scripts/sql/02_backfill_advanced_metrics.sql](backend-spring/scripts/sql/02_backfill_advanced_metrics.sql)：高级指标回填
+- [backend-spring/scripts/sql/03_dimension_enrichment.sql](backend-spring/scripts/sql/03_dimension_enrichment.sql)：维度补齐
+- [front/docs/API_CONTRACT.md](front/docs/API_CONTRACT.md)：前后端接口协议
+- [docs/项目结构与运行指南.md](docs/%E9%A1%B9%E7%9B%AE%E7%BB%93%E6%9E%84%E4%B8%8E%E8%BF%90%E8%A1%8C%E6%8C%87%E5%8D%97.md)：结构与运行总览
+- [docs/文档索引.md](docs/%E6%96%87%E6%A1%A3%E7%B4%A2%E5%BC%95.md)：文档总入口
 
 ## 运行前提
 
+- Windows 10/11
 - JDK 17+
 - Maven 3.9+
-- 可选：MySQL 8+
+- Node.js 18+
+- MySQL 8+ 或 MariaDB 5.5+
+- 如果要跑 Spark 预测，还需要 HDFS、Spark 集群和 MySQL JDBC 驱动
 
-如果机器有多个 Java 版本，建议不要改系统永久环境变量，按终端会话临时切换。
+## 后端启动
 
-## 多 Java 版本推荐用法（不改全局）
-
-在新的 PowerShell 窗口执行：
-
-```powershell
-$env:JAVA_HOME="E:\Java\Java17"
-$env:Path="$env:JAVA_HOME\bin;" + ($env:Path -replace [regex]::Escape("E:\Java\Java 8\bin;"),"")
-java -version
-& "D:\software\maven\apache-maven-3.9.14\bin\mvn.cmd" -v
-```
-
-也可以直接使用脚本：
+进入 [backend-spring](backend-spring) 后执行：
 
 ```powershell
-cd backend-spring
-./scripts/use-java17.ps1
-./scripts/run-backend.ps1 -Profile mysql
+mvn spring-boot:run
 ```
 
-## 后端启动（MySQL）
+后端默认读取 [application.yml](backend-spring/src/main/resources/application.yml)，当前默认数据源指向 `jdbc:mysql://master:3306/nba_stats`，账号密码由环境变量 `DB_USERNAME` 和 `DB_PASSWORD` 覆盖，默认值分别是 `root` 和 `123456`。
 
-```bash
-mysql -u root -p < backend-spring/database/mysql_init.sql
-$env:SPRING_DATASOURCE_URL="jdbc:mysql://127.0.0.1:3306/nba_stats?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true"
-$env:SPRING_DATASOURCE_USERNAME="root"
-$env:SPRING_DATASOURCE_PASSWORD="your_password"
-$env:SPRING_DATASOURCE_DRIVER_CLASS_NAME="com.mysql.cj.jdbc.Driver"
-cd backend-spring
-./scripts/run-backend.ps1 -Profile mysql
-```
-
-后端监听地址为 http://127.0.0.1:8080。
+如果需要切换到本地数据库，可在启动前设置环境变量覆盖 `spring.datasource.url`、`DB_USERNAME` 和 `DB_PASSWORD`。
 
 ## 前端启动
 
-```bash
-cd front
+进入 [front](front) 后执行：
+
+```powershell
 npm install
 npm run dev
 ```
 
-前端开发服务器通过 Vite 代理将 /api 转发到后端。
+前端开发服务器会通过 Vite 代理把 `/api` 请求转发到后端。
 
-## 一键前后端联调（推荐）
+## 数据库初始化与维护
 
-在项目根目录执行：
+如果需要重建 schema 或补充数据，优先查看这些脚本：
 
-```powershell
-./scripts/run-dev.ps1
-```
+1. [schema.sql](backend-spring/src/main/resources/schema.sql)
+2. [data.sql](backend-spring/src/main/resources/data.sql)
+3. [01_performance_indexes.sql](backend-spring/scripts/sql/01_performance_indexes.sql)
+4. [02_backfill_advanced_metrics.sql](backend-spring/scripts/sql/02_backfill_advanced_metrics.sql)
+5. [03_dimension_enrichment.sql](backend-spring/scripts/sql/03_dimension_enrichment.sql)
 
-说明：
+## Spark 预测任务
 
-- 会自动在新 PowerShell 窗口启动后端（复用 `backend-spring/scripts/run-backend.ps1`，包含 Java17 临时切换）
-- 当前窗口启动前端 `npm run dev`
+Spark 任务由 [backend-spring/scripts/spark_nba_ml.py](backend-spring/scripts/spark_nba_ml.py) 提供，脚本从 HDFS 读取球员比赛数据，训练随机森林模型，并把预测结果写回 `prediction_snapshot` 表。
 
-## 自动化自检
+该脚本依赖：
 
-在完成启动后，执行：
+- HDFS 上的 `PlayerStatistics.csv`
+- Spark 集群可用
+- JDBC 驱动 `mysql-connector-j`
+- 目标数据库可通过 `master:3306` 访问
 
-```powershell
-./scripts/verify-dev.ps1
-```
+## 文档导航
 
-如果 Vite 因端口占用切到其他地址，也可手动指定：
+- [项目结构与运行指南](docs/%E9%A1%B9%E7%9B%AE%E7%BB%93%E6%9E%84%E4%B8%8E%E8%BF%90%E8%A1%8C%E6%8C%87%E5%8D%97.md)
+- [启动说明（集群环境）](docs/%E5%90%AF%E5%8A%A8%E8%AF%B4%E6%98%8E-%E9%9B%86%E7%BE%A4%E7%8E%AF%E5%A2%83.md)
+- [数据处理全流程](docs/%E6%95%B0%E6%8D%AE%E5%A4%84%E7%90%86%E5%85%A8%E6%B5%81%E7%A8%8B-%E4%BB%8EKaggle%E5%88%B0%E5%85%A5%E5%BA%93.md)
+- [MariaDB 导入后运行手册](docs/MariaDB%E5%AF%BC%E5%85%A5%E5%90%8E%E8%BF%90%E8%A1%8C%E6%89%8B%E5%86%8C.md)
+- [文档索引](docs/%E6%96%87%E6%A1%A3%E7%B4%A2%E5%BC%95.md)
+- [前端 API 协议](front/docs/API_CONTRACT.md)
+- [前端交付清单](front/docs/DELIVERY_CHECKLIST.md)
 
-```powershell
-./scripts/verify-dev.ps1 -FrontendUrl "http://127.0.0.1:5174/"
-```
+## 快速验证
 
-通过标准：
-
-- 后端 `http://127.0.0.1:8080/api/dashboard/overview` 可访问，且响应包含 `code/message/data`
-- 前端 `http://127.0.0.1:5173/` 可访问，且返回 HTML 页面内容
-
-可选：查看当前后端实际连接的数据源与关键表计数：
-
-```powershell
-curl http://127.0.0.1:8080/api/admin/system/status
-```
-
-## API 协议
-
-完整请求与响应结构定义请参见 [front/docs/API_CONTRACT.md](front/docs/API_CONTRACT.md)。
-
-## Spark 执行配置
-
-后端支持三种 Spark 任务模式：
-
-- `APP_SPARK_ENABLED=false`：跳过真实执行（任务状态 `skipped`）
-- `APP_SPARK_ENABLED=true` 且未设置命令：mock 成功并写入快照（便于联调）
-- `APP_SPARK_ENABLED=true` 且设置命令：执行真实 Spark 命令并记录输出
-
-示例：
-
-```powershell
-$env:APP_SPARK_ENABLED="true"
-$env:APP_SPARK_SUBMIT_COMMAND="spark-submit --master local[*] scripts/spark_daily_job.py"
-$env:APP_SPARK_WORKING_DIR="D:\software\nba_analysis_project\backend-spring"
-$env:APP_SPARK_TIMEOUT_SECONDS="1800"
-cd backend-spring
-./scripts/run-backend.ps1 -Profile mysql
-```
-
-## 真实数据导入（推荐数据源 #1）
-
-请确保数据目录至少包含 `PlayerStatistics.csv`，推荐同时包含 `Games.csv` 以导入比赛历史。
-
-在 `backend-spring` 目录执行：
-
-```powershell
-./scripts/import-eoin-dataset.ps1 -DatasetDir "D:\software\nba_analysis_project\data" -ApplyToMySql -MySqlUser root -MySqlPassword your_password
-```
-
-不传 `-DatasetDir` 时，脚本默认读取 `D:\software\nba_analysis_project\data`。
-
-导入完成后，可用状态接口确认当前库与数据量：
-
-```powershell
-curl http://127.0.0.1:8080/api/admin/system/status
-```
-
-## 常见问题
-
-1. `mvn -v` 显示 Java 8：
-	说明当前终端没有切到 Java17，请先执行上面的临时切换命令或 `./scripts/use-java17.ps1`。
-
-2. `help:effective-settings` 报 Unknown lifecycle phase `.xml`：
-	PowerShell 里请确保参数不被拆分，推荐写法：
-
-```powershell
-& "D:\software\maven\apache-maven-3.9.14\bin\mvn.cmd" help:effective-settings "-Doutput=effective-settings.xml"
-```
-
-## 快速验证清单
-
-1. 启动完成后先运行 `./scripts/verify-dev.ps1`，确认基础链路正常。
-2. 启动前端后访问开发地址（通常是 `http://127.0.0.1:5173`），首页可正常打开。
-3. 进入“球员分析”，搜索任意球员并打开详情页。
-4. 进入“球队对比”，选择两支球队后能看到图表与指标对比。
-5. 进入“预测中心”，分别触发球员预测、比赛预测、赛季趋势与解释性视图。
-6. 进入“数据管理”，尝试上传 CSV 并确认历史记录列表刷新。
+1. 启动后端后访问 `http://127.0.0.1:8080/api/dashboard/overview`，确认返回 `code/message/data`。
+2. 启动前端后打开开发地址，确认首页和路由能正常加载。
+3. 进入“球员分析”“球队对比”“预测中心”“数据管理”逐项检查核心页面。
