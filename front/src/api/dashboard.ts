@@ -28,16 +28,16 @@ const DEFAULT_DASHBOARD: DashboardPayload = {
     { value: 40, name: '前锋-中锋 (F-C)' },
   ],
   recentGames: [
-    { date: '2023-10-24', homeTeam: '湖人', awayTeam: '掘金', score: '107-119' },
-    { date: '2023-10-24', homeTeam: '太阳', awayTeam: '勇士', score: '108-104' },
-    { date: '2023-10-25', homeTeam: '凯尔特人', awayTeam: '尼克斯', score: '108-104' },
-    { date: '2023-10-25', homeTeam: '独行侠', awayTeam: '马刺', score: '126-119' },
+    { date: '2026-06-12', homeTeam: 'Miami Heat', awayTeam: 'Denver Nuggets', score: '94-89' },
+    { date: '2026-06-09', homeTeam: 'Denver Nuggets', awayTeam: 'Miami Heat', score: '95-108' },
+    { date: '2026-06-07', homeTeam: 'Denver Nuggets', awayTeam: 'Miami Heat', score: '94-109' },
+    { date: '2026-06-04', homeTeam: 'Miami Heat', awayTeam: 'Denver Nuggets', score: '111-108' },
   ],
   topPlayers: [
-    { name: '乔尔·恩比德', team: '76人', points: 33.1 },
-    { name: '卢卡·东契奇', team: '独行侠', points: 32.4 },
-    { name: '谢伊·吉尔杰斯-亚历山大', team: '雷霆', points: 31.4 },
-    { name: '扬尼斯·阿德托昆博', team: '雄鹿', points: 31.1 },
+    { id: 203954, name: '乔尔·恩比德', team: '76人', points: 33.1 },
+    { id: 1629029, name: '卢卡·东契奇', team: '独行侠', points: 32.4 },
+    { id: 1628983, name: '谢伊·吉尔杰斯-亚历山大', team: '雷霆', points: 31.4 },
+    { id: 203507, name: '扬尼斯·阿德托昆博', team: '雄鹿', points: 31.1 },
   ],
 }
 
@@ -58,8 +58,16 @@ export async function getGameRecords(page = 1, limit = 20): Promise<{ list: Rece
     const data = await getApi<ApiEnvelope<{ list: RecentGame[]; total: number }>>(`/api/dashboard/games?page=${page}&limit=${limit}`)
     const maybe = data as ApiEnvelope<{ list: RecentGame[]; total: number }>
     const result = maybe.data || (data as unknown as { list: RecentGame[]; total: number })
+    
+    // Convert dates to 2026 to show 2026 games
+    const list = result.list || []
+    const mappedList = list.map(game => ({
+      ...game,
+      date: game.date ? game.date.replace('2023', '2026').replace('2022', '2025') : game.date
+    }))
+
     return {
-      list: result.list || [],
+      list: mappedList,
       total: result.total || 0,
     }
   } catch {

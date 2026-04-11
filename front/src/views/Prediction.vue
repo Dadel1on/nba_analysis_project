@@ -39,7 +39,7 @@
               v-if="players.length"
               :data="players"
               style="width: 100%"
-              height="520"
+              max-height="850"
               @row-click="selectPlayer"
               highlight-current-row
               class="custom-table"
@@ -260,7 +260,7 @@ import type {
   SeasonTrendPredictionResult,
 } from '@/api/types'
 
-defineProps<{ embedded?: boolean }>()
+const props = defineProps<{ embedded?: boolean }>()
 
 const searchName = ref('')
 const players = ref<PlayerSummary[]>([])
@@ -317,7 +317,7 @@ const fetchPlayers = async () => {
   }
 }
 
-const selectPlayer = (p: PlayerSummary) => {
+const selectPlayer = async (p: PlayerSummary) => {
   selectedPlayer.value = p
   prediction.value = null
   seasonTrend.value = null
@@ -329,6 +329,10 @@ const selectPlayer = (p: PlayerSummary) => {
   predictionError.value = ''
   seasonTrendError.value = ''
   explainError.value = ''
+
+  if (props.embedded) {
+    await runPrediction()
+  }
 }
 
 const runPrediction = async () => {
@@ -519,22 +523,25 @@ onUnmounted(() => {
 
 <style scoped>
 .prediction {
-  padding: 20px;
-  background-color: #f8f9fa;
+  padding: 0;
+  background-color: transparent;
   min-height: calc(100vh - 100px);
+  margin-top: 10px;
 }
 
 h1 {
-  margin-bottom: 24px;
-  font-weight: 700;
-  color: #1a1a1a;
-  font-size: 28px;
+  margin-bottom: 30px;
+  font-weight: 800;
+  color: #1f2a44;
+  font-size: 32px;
+  letter-spacing: -0.5px;
 }
 
 /* 搜索卡片样式 */
 .search-card {
-  border-radius: 12px;
-  border: none;
+  border-radius: 16px;
+  border: 1px solid #ebeef5;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.04);
   height: 100%;
 }
 
@@ -545,8 +552,9 @@ h1 {
 }
 
 .header-title {
-  font-size: 18px;
-  font-weight: 600;
+  font-size: 19px;
+  font-weight: 800;
+  color: #1f2a44;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -566,13 +574,30 @@ h1 {
 }
 
 .custom-input :deep(.el-input__wrapper) {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  border-radius: 8px;
+  border-radius: 12px;
+  padding: 8px 16px;
+  font-size: 15px;
+  box-shadow: 0 0 0 1px #e4e7ed inset;
+}
+
+.custom-input :deep(.el-input__wrapper):hover {
+  box-shadow: 0 0 0 1px #c0c4cc inset;
+}
+
+.custom-input :deep(.el-input__wrapper.is-focus) {
+  box-shadow: 0 0 0 2px #409eff inset;
 }
 
 .table-container {
   border-radius: 8px;
   overflow: hidden;
+}
+
+.search-box .el-button {
+  border-radius: 12px;
+  padding: 0 28px;
+  font-weight: 600;
+  font-size: 14px;
 }
 
 .custom-table {
@@ -599,9 +624,10 @@ h1 {
 }
 
 /* 结果卡片样式 */
-.result-card {
-  border-radius: 12px;
-  border: none;
+.result-card, .empty-result-card {
+  border-radius: 16px;
+  border: 1px solid #ebeef5;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.04);
   background: #ffffff;
 }
 
@@ -632,22 +658,35 @@ h1 {
 }
 
 .p-name {
-  font-size: 22px;
-  font-weight: 700;
-  color: #1a1a1a;
+  font-size: 26px;
+  font-weight: 800;
+  color: #1f2a44;
+  line-height: 1.2;
 }
 
 .p-sub {
-  font-size: 14px;
+  font-size: 15px;
   color: #909399;
-  margin-top: 2px;
+  font-weight: 500;
+  margin-top: 4px;
 }
 
 .predict-btn {
-  padding: 12px 24px;
-  border-radius: 10px;
-  font-weight: 600;
+  border-radius: 12px;
+  padding: 14px 32px;
+  font-weight: 700;
+  font-size: 16px;
   letter-spacing: 0.5px;
+  background: linear-gradient(135deg, #409eff 0%, #3054ff 100%);
+  border: none;
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
+  transition: all 0.3s;
+  color: white;
+}
+
+.predict-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(64, 158, 255, 0.4);
 }
 
 .section-title {

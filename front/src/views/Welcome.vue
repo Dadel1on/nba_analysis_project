@@ -11,23 +11,25 @@
           top: `${mousePos.y}px` 
         }"
       ></div>
-      <!-- 静态装饰球，增加层次感 -->
+      <!-- 静态装饰球，增加层次感：NBA红蓝配色 -->
       <div class="glow-orb orb-static-1"></div>
       <div class="glow-orb orb-static-2"></div>
+      <!-- 球场底纹装饰 -->
+      <div class="court-bg-marks"></div>
     </div>
 
     <!-- 极简顶部导航 -->
     <nav class="top-nav fade-in">
       <div class="logo-area">
         <div class="logo-icon">
-          <div class="inner-icon"></div>
+          <span class="basketball-logo">🏀</span>
         </div>
-        <span class="logo-text">NBA AI ANALYTICS</span>
+        <span class="logo-text">NBA <span class="highlight-blue">AI</span> ANALYTICS</span>
       </div>
       <div class="nav-links">
-        <a href="#" class="nav-item">功能</a>
-        <a href="https://www.kaggle.com/datasets/eoinamoore/historical-nba-data-and-player-box-scores" target="_blank" class="nav-item">数据源</a>
-        <a href="#" class="nav-item">关于</a>
+        <a href="#" class="nav-item">功能体验</a>
+        <a href="https://www.kaggle.com/datasets/eoinamoore/historical-nba-data-and-player-box-scores" target="_blank" class="nav-item">历史数据源</a>
+        <a href="#" class="nav-item">技术架构</a>
       </div>
     </nav>
 
@@ -37,56 +39,86 @@
         <div class="badge-container slide-up" style="--delay: 0.1s">
           <div class="glow-badge">
             <span class="badge-dot"></span>
-            Spark 引擎驱动 · 实时预测
+            Spark 引擎驱动 · 球场战况实时推演
           </div>
         </div>
         
         <h1 class="hero-title slide-up" style="--delay: 0.2s">
-          让每一份数据，<br />
-          <span class="gradient-text">都触手可及。</span>
+          洞悉赛场风云，<br />
+          <span class="gradient-text">掌控制胜数据。</span>
         </h1>
         
         <p class="hero-subtitle slide-up" style="--delay: 0.3s">
-          NBA 球员价值分析系统，利用领先的 AI 算法深度挖掘历史数据，<br />
-          为您提供精准的赛场趋势预测与全方位的球员战力评估。
+          专为 NBA 赛场打造的数字分析枢纽，利用领先的 AI 集成算法挖掘海量战报数据。<br />
+          为您呈现核心球员的全面战力评估，与未来巅峰对决的胜率走势。
         </p>
 
         <div class="action-group slide-up" style="--delay: 0.4s">
           <button class="btn-primary" @click="enterSystem">
-            立即开始使用
+            进入系统
             <el-icon class="icon-right"><Right /></el-icon>
           </button>
           <button class="btn-secondary" @click="learnMore">
-            了解更多
+            了解体系
           </button>
         </div>
       </div>
 
-      <!-- 右侧悬浮卡片展示 (Trae 风格预览) -->
+      <!-- 右侧悬浮卡片展示 (NBA 数据风) -->
       <div class="hero-visual fade-in" style="--delay: 0.6s">
         <div class="visual-stack">
           <div class="glass-card card-main">
-            <div class="card-header">
-              <div class="dot red"></div>
-              <div class="dot yellow"></div>
-              <div class="dot green"></div>
-            </div>
-            <div class="card-body">
-              <div class="skeleton-line title"></div>
-              <div class="skeleton-grid">
-                <div class="skeleton-item"></div>
-                <div class="skeleton-item"></div>
-                <div class="skeleton-item"></div>
+            <transition name="slide-fade" mode="out-in">
+              <div :key="currentPlayer.id">
+                <div class="nba-card-header">
+                  <div class="player-avatar-mock has-img" :style="currentPlayer.gradient">
+                    <img :src="`https://cdn.nba.com/headshots/nba/latest/260x190/${currentPlayer.id}.png`" :alt="currentPlayer.name" class="player-img" />
+                  </div>
+                  <div class="player-info">
+                    <div class="p-name">{{ currentPlayer.name }}</div>
+                    <div class="p-team">{{ currentPlayer.team }}</div>
+                  </div>
+                  <div class="p-rating">{{ currentPlayer.ovr }}<span class="ovr">OVR</span></div>
+                </div>
+                <div class="nba-stats-grid">
+                  <div class="stat-box">
+                    <div class="val">{{ currentPlayer.pts }}</div>
+                    <div class="lbl">PTS</div>
+                  </div>
+                  <div class="stat-box">
+                    <div class="val">{{ currentPlayer.reb }}</div>
+                    <div class="lbl">REB</div>
+                  </div>
+                  <div class="stat-box">
+                    <div class="val">{{ currentPlayer.ast }}</div>
+                    <div class="lbl">AST</div>
+                  </div>
+                </div>
               </div>
+            </transition>
+            <!-- 球场热区示意图 -->
+            <div class="mock-court">
+              <div class="court-paint"></div>
+              <div class="court-arc"></div>
+              <div class="hot-spot h-1"></div>
+              <div class="hot-spot h-2"></div>
+              <div class="hot-spot h-3"></div>
             </div>
           </div>
           <div class="glass-card card-sub-1">
-            <div class="mini-chart"></div>
+            <div class="match-mini">
+              <div class="teams"><span class="team-r">LAL</span> ⚔ <span class="team-b">GSW</span></div>
+              <div class="prob-bar-bg">
+                <div class="prob-bar-fill" style="width: 60%"></div>
+                <div class="prob-marker">60%</div>
+              </div>
+              <div class="prob-desc">AI 胜率推演中...</div>
+            </div>
           </div>
           <div class="glass-card card-sub-2">
             <div class="status-indicator">
               <span class="pulse"></span>
-              Analysis Active
+              Live Tracking Tracking Active
             </div>
           </div>
         </div>
@@ -97,26 +129,48 @@
     <footer class="hero-footer fade-in" style="--delay: 0.8s">
       <div class="footer-left">
         <div class="tech-stack">
-          <span class="tech-item">VUE 3</span>
-          <span class="tech-item">SPARK</span>
-          <span class="tech-item">AI</span>
+          <span class="tech-item"><span class="nba-color-dot red"></span>VUE 3</span>
+          <span class="tech-item"><span class="nba-color-dot blue"></span>APACHE SPARK</span>
+          <span class="tech-item"><span class="nba-color-dot black"></span>MACHINE LEARNING</span>
         </div>
       </div>
       <div class="footer-right">
-        <span class="copyright">© 2026 NBA Analytics. All rights reserved.</span>
+        <span class="copyright">© 2026 NBA Analytics. Code the Court.</span>
       </div>
     </footer>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Right } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const containerRef = ref<HTMLElement | null>(null)
 const mousePos = reactive({ x: -500, y: -500 }) // 初始在屏幕外
+
+// 动态球员数据展示
+const showcasePlayers = [
+  { id: 2544, name: 'L. James', team: 'LAL | SF', ovr: 96, pts: '25.7', reb: '7.3', ast: '8.3', gradient: 'background: linear-gradient(135deg, #fdb927 0%, #552583 100%)' }, // Lakers
+  { id: 201939, name: 'S. Curry', team: 'GSW | PG', ovr: 95, pts: '26.4', reb: '4.5', ast: '5.1', gradient: 'background: linear-gradient(135deg, #006BB6 0%, #FDB927 100%)' }, // Warriors
+  { id: 203999, name: 'N. Jokic', team: 'DEN | C', ovr: 98, pts: '26.4', reb: '12.4', ast: '9.0', gradient: 'background: linear-gradient(135deg, #0E2240 0%, #FEC524 100%)' }, // Nuggets
+  { id: 1629029, name: 'L. Doncic', team: 'DAL | PG', ovr: 97, pts: '33.9', reb: '9.2', ast: '9.8', gradient: 'background: linear-gradient(135deg, #00538C 0%, #B8C4CA 100%)' }, // Mavs
+  { id: 1628369, name: 'J. Tatum', team: 'BOS | SF', ovr: 95, pts: '26.9', reb: '8.1', ast: '4.9', gradient: 'background: linear-gradient(135deg, #007A33 0%, #BA9653 100%)' }, // Celtics
+]
+const currentPlayerIndex = ref(0)
+const currentPlayer = computed(() => showcasePlayers[currentPlayerIndex.value])
+
+let playerInterval: ReturnType<typeof setInterval>
+onMounted(() => {
+  playerInterval = setInterval(() => {
+    currentPlayerIndex.value = (currentPlayerIndex.value + 1) % showcasePlayers.length
+  }, 3500)
+})
+
+onUnmounted(() => {
+  if (playerInterval) clearInterval(playerInterval)
+})
 
 const handleMouseMove = (e: MouseEvent) => {
   if (!containerRef.value) return
@@ -180,7 +234,7 @@ const learnMore = () => {
   position: absolute;
   width: 800px;
   height: 800px;
-  background: radial-gradient(circle, rgba(82, 82, 255, 0.1) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(82, 82, 255, 0.3) 0%, rgba(64, 158, 255, 0.15) 30%, transparent 70%);
   border-radius: 50%;
   transform: translate(-50%, -50%);
   transition: left 0.1s ease-out, top 0.1s ease-out;
@@ -199,7 +253,7 @@ const learnMore = () => {
 .orb-static-1 {
   width: 400px;
   height: 400px;
-  background: #5252ff;
+  background: #1D428A;
   top: -100px;
   right: 10%;
 }
@@ -207,10 +261,10 @@ const learnMore = () => {
 .orb-static-2 {
   width: 500px;
   height: 500px;
-  background: #ff4d4d;
+  background: #C9082A;
   bottom: -150px;
   left: 5%;
-  opacity: 0.1;
+  opacity: 0.15;
 }
 
 /* 顶部导航 */
@@ -231,27 +285,30 @@ const learnMore = () => {
 }
 
 .logo-icon {
-  width: 32px;
-  height: 32px;
+  width: 38px;
+  height: 38px;
   background: #1a1a1a;
-  border-radius: 8px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
 
-.inner-icon {
-  width: 14px;
-  height: 14px;
-  background: #fff;
-  border-radius: 2px;
+.basketball-logo {
+  font-size: 22px;
+  line-height: 1;
 }
 
 .logo-text {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 900;
   letter-spacing: 1px;
   color: #000;
+}
+
+.highlight-blue {
+  color: #1D428A;
 }
 
 .nav-links {
@@ -262,13 +319,14 @@ const learnMore = () => {
 
 .nav-item {
   font-size: 14px;
+  font-weight: 600;
   color: rgba(0, 0, 0, 0.7);
   text-decoration: none;
   transition: color 0.3s;
 }
 
 .nav-item:hover {
-  color: #5252ff;
+  color: #C9082A;
 }
 
 /* 英雄区 */
@@ -291,33 +349,34 @@ const learnMore = () => {
   align-items: center;
   gap: 10px;
   padding: 8px 20px;
-  background: rgba(82, 82, 255, 0.08);
-  border: 1px solid rgba(82, 82, 255, 0.15);
+  background: rgba(201, 8, 42, 0.08); /* NBA Red alpha */
+  border: 1px solid rgba(201, 8, 42, 0.15);
   border-radius: 100px;
   font-size: 13px;
-  color: #5252ff;
+  font-weight: 600;
+  color: #C9082A;
   margin-bottom: 32px;
 }
 
 .badge-dot {
   width: 6px;
   height: 6px;
-  background: #5252ff;
+  background: #C9082A;
   border-radius: 50%;
-  box-shadow: 0 0 10px #5252ff;
+  box-shadow: 0 0 10px #C9082A;
 }
 
 .hero-title {
-  font-size: 80px;
-  font-weight: 800;
+  font-size: 72px;
+  font-weight: 900;
   line-height: 1.1;
-  letter-spacing: -3px;
+  letter-spacing: -2px;
   margin-bottom: 32px;
-  color: #000;
+  color: #1a1a1a;
 }
 
 .gradient-text {
-  background: linear-gradient(90deg, #000 0%, rgba(0, 0, 0, 0.7) 100%);
+  background: linear-gradient(90deg, #1D428A 0%, #C9082A 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -325,6 +384,7 @@ const learnMore = () => {
 .hero-subtitle {
   font-size: 18px;
   color: rgba(0, 0, 0, 0.7);
+  font-weight: 500;
   line-height: 1.6;
   margin-bottom: 48px;
   max-width: 600px;
@@ -338,7 +398,7 @@ const learnMore = () => {
 .btn-primary {
   height: 56px;
   padding: 0 32px;
-  background: #000;
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d3748 100%);
   color: #fff;
   border: none;
   border-radius: 12px;
@@ -348,11 +408,13 @@ const learnMore = () => {
   display: flex;
   align-items: center;
   transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.1);
 }
 
 .btn-primary:hover {
   transform: translateY(-4px);
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  background: linear-gradient(135deg, #C9082A 0%, #8b041b 100%);
 }
 
 .btn-secondary {
@@ -363,13 +425,15 @@ const learnMore = () => {
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 12px;
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.3s;
 }
 
 .btn-secondary:hover {
   background: rgba(0, 0, 0, 0.08);
+  border-color: #1D428A;
+  color: #1D428A;
 }
 
 /* 视觉部分 */
@@ -385,75 +449,243 @@ const learnMore = () => {
   position: relative;
   width: 400px;
   height: 400px;
-  transform: rotateY(-20deg) rotateX(10deg);
+  transform: rotateY(-15deg) rotateX(10deg);
+  transition: transform 0.5s ease;
+}
+.visual-stack:hover {
+  transform: rotateY(-5deg) rotateX(5deg) scale(1.05);
 }
 
 .glass-card {
   position: absolute;
-  background: rgba(255, 255, 255, 0.8);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  border-radius: 24px;
-  backdrop-filter: blur(20px);
-  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 20px;
+  backdrop-filter: blur(24px);
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.08), inset 0 0 0 1px rgba(255,255,255,0.5);
 }
 
 .card-main {
   width: 400px;
-  height: 300px;
+  height: 320px;
   z-index: 2;
   padding: 24px;
 }
 
-.card-header {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 32px;
+/* 球员卡样式 */
+.slide-fade-enter-active {
+  transition: all 0.4s ease-out;
+}
+.slide-fade-leave-active {
+  transition: all 0.3s cubic-bezier(1, 0.5, 0.8, 1);
+}
+.slide-fade-enter-from {
+  transform: translateX(15px);
+  opacity: 0;
+}
+.slide-fade-leave-to {
+  transform: translateX(-15px);
+  opacity: 0;
 }
 
-.dot { width: 10px; height: 10px; border-radius: 50%; opacity: 0.4; }
-.red { background: #ff5f57; }
-.yellow { background: #febc2e; }
-.green { background: #28c840; }
+.nba-card-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.player-avatar-mock {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+.player-avatar-mock.has-img {
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+}
+.player-img {
+  width: 140%;
+  height: auto;
+  object-fit: cover;
+  transform: translateY(12px);
+}
+.player-info {
+  flex: 1;
+}
+.p-name {
+  font-weight: 900;
+  font-size: 20px;
+  color: #1a202c;
+  letter-spacing: -0.5px;
+}
+.p-team {
+  font-size: 14px;
+  color: #718096;
+  font-weight: 700;
+  margin-top: 2px;
+}
+.p-rating {
+  font-size: 32px;
+  font-weight: 900;
+  color: #1D428A;
+  display: flex;
+  align-items: baseline;
+}
+.p-rating .ovr {
+  font-size: 12px;
+  margin-left: 2px;
+  color: #a0aec0;
+  font-weight: 800;
+}
 
-.skeleton-line { height: 12px; background: rgba(0, 0, 0, 0.03); border-radius: 6px; margin-bottom: 20px; }
-.skeleton-line.title { width: 60%; }
-.skeleton-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-.skeleton-item { height: 80px; background: rgba(0, 0, 0, 0.02); border-radius: 12px; }
+.nba-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.stat-box {
+  background: #f7fafc;
+  border-radius: 12px;
+  padding: 12px;
+  text-align: center;
+  border: 1px solid rgba(0,0,0,0.02);
+}
+.stat-box .val {
+  font-size: 22px;
+  font-weight: 900;
+  color: #1a202c;
+}
+.stat-box .lbl {
+  font-size: 12px;
+  font-weight: 700;
+  color: #a0aec0;
+  margin-top: 2px;
+}
+
+/* 球场热区示意图 */
+.mock-court {
+  position: relative;
+  height: 100px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f8fafc 0%, #edf2f7 100%);
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+.court-paint {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 70px;
+  border: 2px solid #cbd5e0;
+  border-bottom: none;
+  background: rgba(29, 66, 138, 0.05);
+}
+.court-arc {
+  position: absolute;
+  bottom: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 180px;
+  height: 180px;
+  border: 2px solid #cbd5e0;
+  border-radius: 50%;
+}
+.hot-spot {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  background: radial-gradient(circle, rgba(201,8,42,0.7) 0%, transparent 60%);
+  border-radius: 50%;
+  animation: pulse-hotspot 2s infinite alternate;
+}
+@keyframes pulse-hotspot {
+  0% { transform: scale(0.8); opacity: 0.8; }
+  100% { transform: scale(1.2); opacity: 1; }
+}
+.h-1 { bottom: 10px; left: 40%; }
+.h-2 { bottom: 40px; left: 60%; animation-delay: 0.5s; }
+.h-3 { bottom: 25px; left: 75%; animation-delay: 1s; }
 
 .card-sub-1 {
-  width: 200px;
-  height: 150px;
-  bottom: -40px;
+  width: 260px;
+  height: 120px;
+  bottom: -20px;
   left: -40px;
   z-index: 3;
-  padding: 20px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.mini-chart {
+.match-mini {
   width: 100%;
+  padding: 16px 20px;
+}
+.teams {
+  font-weight: 900;
+  font-size: 16px;
+  text-align: center;
+  margin-bottom: 12px;
+  letter-spacing: 0.5px;
+}
+.team-r { color: #C9082A; text-shadow: 0 2px 4px rgba(201,8,42,0.2); }
+.team-b { color: #1D428A; text-shadow: 0 2px 4px rgba(29,66,138,0.2); }
+.prob-bar-bg {
+  height: 10px;
+  background: rgba(0,0,0,0.05);
+  border-radius: 5px;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 8px;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+}
+.prob-bar-fill {
+  background: linear-gradient(90deg, #C9082A 0%, #1D428A 100%);
   height: 100%;
-  background: linear-gradient(0deg, rgba(82, 82, 255, 0.05), transparent);
-  border-bottom: 2px solid #5252ff;
-  border-radius: 0 0 4px 4px;
+  transition: width 1s ease-in-out;
+}
+.prob-marker {
+  position: absolute;
+  right: 8px;
+  top: -2px;
+  font-size: 10px;
+  font-weight: 900;
+  color: white;
+}
+.prob-desc {
+  font-size: 11px;
+  color: #718096;
+  text-align: center;
+  font-weight: 600;
 }
 
 .card-sub-2 {
-  width: 180px;
-  height: 80px;
+  width: 200px;
+  height: 60px;
   top: -20px;
-  right: -20px;
+  right: -30px;
   z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 16px;
 }
 
 .status-indicator {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 12px;
-  color: rgba(0, 0, 0, 0.7);
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(0, 0, 0, 0.8);
 }
 
 .pulse {

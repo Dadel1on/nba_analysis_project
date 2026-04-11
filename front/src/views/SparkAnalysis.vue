@@ -106,8 +106,8 @@
         stripe
         highlight-current-row
         @row-click="handleRowClick"
-        style="width: 100%"
-        :header-cell-style="{ background: '#f5f7fa', color: '#606266', fontWeight: 'bold' }"
+        style="width: 100%; font-size: 16px;"
+        :header-cell-style="{ background: '#f5f7fa', color: '#606266', fontWeight: 'bold', fontSize: '16px' }"
       >
         <el-table-column prop="playerName" label="球员姓名" min-width="120">
           <template #default="scope">
@@ -366,7 +366,8 @@ const updateTopPlayersChart = () => {
     },
     legend: {
       data: ['预测得分', '预测篮板', '预测助攻'],
-      bottom: '2%'
+      bottom: '2%',
+      textStyle: { fontSize: 14 }
     },
     grid: { left: '3%', right: '4%', bottom: '15%', containLabel: true },
     xAxis: { 
@@ -375,7 +376,7 @@ const updateTopPlayersChart = () => {
       axisLabel: { 
         interval: 0, 
         rotate: 25,
-        fontSize: 12,
+        fontSize: 14,
         fontWeight: 'bold',
         color: '#606266'
       }
@@ -444,7 +445,12 @@ const updateRadarChart = () => {
         { name: '置信度', max: 1 },
         { name: '综合效率', max: 100 }
       ],
-      radius: '65%'
+      radius: '65%',
+      axisName: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: '#606266'
+      }
     },
     series: [
       {
@@ -500,10 +506,11 @@ const updateGaugeChart = () => {
         pointer: { icon: 'path://M12.8,0.7l12,40.1H0.7L12.8,0.7z', length: '12%', width: 10, offsetCenter: [0, '-60%'], itemStyle: { color: 'auto' } },
         axisTick: { length: 12, lineStyle: { color: 'auto', width: 2 } },
         splitLine: { length: 20, lineStyle: { color: 'auto', width: 5 } },
-        axisLabel: { color: '#464646', fontSize: 12, distance: -45, formatter: (value: number) => (value * 100).toFixed(0) + '%' },
-        title: { offsetCenter: [0, '-20%'], fontSize: 14 },
+        axisLabel: { color: '#464646', fontSize: 16, distance: -45, formatter: (value: number) => (value * 100).toFixed(0) + '%' },
+        title: { offsetCenter: [0, '-20%'], fontSize: 18, fontWeight: 'bold' },
         detail: {
-          fontSize: 24,
+          fontSize: 32,
+          fontWeight: 'bold',
           offsetCenter: [0, '0%'],
           valueAnimation: true,
           formatter: (value: number) => (value * 100).toFixed(1) + '%',
@@ -558,9 +565,8 @@ onUnmounted(() => {
 
 <style scoped>
 .spark-analysis {
-  padding: 24px;
-  background-color: #f9fafc;
-  min-height: calc(100vh - 64px);
+  padding: 0;
+  background-color: transparent;
 }
 
 .page-header {
@@ -575,20 +581,21 @@ onUnmounted(() => {
 }
 
 .start-btn {
-  padding: 12px 24px;
+  padding: 16px 32px;
+  font-size: 16px;
   font-weight: 600;
   box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
 }
 
 .page-title {
-  font-size: 28px;
+  font-size: 34px;
   font-weight: 600;
   color: #1a1a1a;
-  margin: 0 0 8px 0;
+  margin: 0 0 10px 0;
 }
 
 .page-subtitle {
-  font-size: 14px;
+  font-size: 16px;
   color: #909399;
   margin: 0;
 }
@@ -650,7 +657,7 @@ onUnmounted(() => {
 }
 
 .card-title {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 600;
   color: #303133;
 }
@@ -731,17 +738,19 @@ onUnmounted(() => {
 .results-desc {
   margin-bottom: 20px;
   color: #606266;
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .player-name {
   font-weight: 600;
   color: #303133;
+  font-size: 16px;
 }
 
 .stat-highlight {
   color: #f56c6c;
   font-weight: bold;
+  font-size: 16px;
 }
 
 .charts-row {
@@ -759,10 +768,10 @@ onUnmounted(() => {
 }
 
 .chart-header {
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 600;
   color: #606266;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
   display: flex;
   align-items: center;
 }
@@ -794,13 +803,14 @@ onUnmounted(() => {
 }
 
 .compact-stat-label {
-  font-size: 12px;
+  font-size: 14px;
   color: #909399;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  font-weight: 500;
 }
 
 .compact-stat-value {
-  font-size: 20px;
+  font-size: 28px;
   font-weight: bold;
   color: #303133;
 }
@@ -828,7 +838,7 @@ onUnmounted(() => {
 }
 
 .section-subtitle {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   color: #606266;
 }
@@ -837,7 +847,7 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 20px;
+  padding: 18px 24px;
   border-radius: 8px;
   background-color: #f0f2f5;
   border-left: 6px solid #909399;
@@ -874,22 +884,22 @@ onUnmounted(() => {
 .running .status-icon { color: #409eff; }
 
 .job-name-text {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
   color: #303133;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
 }
 
 .job-time-text {
-  font-size: 12px;
+  font-size: 14px;
   color: #909399;
 }
 
 .status-tag-large {
-  padding: 0 16px;
-  height: 32px;
-  line-height: 30px;
-  font-size: 14px;
+  padding: 0 20px;
+  height: 36px;
+  line-height: 34px;
+  font-size: 16px;
   font-weight: bold;
 }
 
@@ -919,34 +929,35 @@ onUnmounted(() => {
   align-items: center;
   background-color: #409eff;
   color: white;
-  padding: 4px 12px;
+  padding: 6px 16px;
   border-radius: 20px;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .model-badge .el-icon {
   margin-right: 6px;
+  font-size: 16px;
 }
 
 .model-main-desc {
   margin: 0;
-  font-size: 14px;
+  font-size: 16px;
   color: #606266;
-  line-height: 1.6;
+  line-height: 1.8;
 }
 
 .model-divider {
-  height: 80px;
-  margin: 0 32px;
+  height: 90px;
+  margin: 0 40px;
 }
 
 .logic-grid {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
 }
 
 .logic-item {
@@ -955,20 +966,21 @@ onUnmounted(() => {
 }
 
 .logic-label {
-  font-size: 12px;
+  font-size: 14px;
   color: #909399;
   display: flex;
   align-items: center;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 
 .logic-label .el-icon {
-  margin-right: 4px;
+  margin-right: 6px;
   color: #409eff;
+  font-size: 16px;
 }
 
 .logic-value {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   color: #303133;
 }

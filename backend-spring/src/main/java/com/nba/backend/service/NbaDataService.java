@@ -102,7 +102,7 @@ public class NbaDataService {
           players.stream()
               .sorted(Comparator.comparingDouble((PlayerSummary p) -> p.stats().points()).reversed())
               .limit(5)
-              .map(p -> new TopPlayer(p.name(), p.team(), p.stats().points()))
+              .map(p -> new TopPlayer((long) p.id(), p.name(), p.team(), p.stats().points()))
               .toList()
       );
     }
@@ -138,7 +138,7 @@ public class NbaDataService {
     List<TopPlayer> fallbackTop = fallbackPlayers.stream()
         .sorted(Comparator.comparingDouble((PlayerSummary p) -> p.stats().points()).reversed())
         .limit(5)
-        .map(p -> new TopPlayer(p.name(), p.team(), p.stats().points()))
+        .map(p -> new TopPlayer((long) p.id(), p.name(), p.team(), p.stats().points()))
         .toList();
 
     List<TrendPoint> trend = dashboardTrendPoints(10);
@@ -303,7 +303,7 @@ public class NbaDataService {
         return new PaginatedPayload<>(List.of(), total);
       }
       List<TopPlayer> list = rows.stream()
-          .map(r -> new TopPlayer(r.name(), normalized(playerTeamName(r.playerId())), round(r.points())))
+          .map(r -> new TopPlayer(r.playerId(), r.name(), normalized(playerTeamName(r.playerId())), round(r.points())))
           .toList();
       return new PaginatedPayload<>(list, total);
     } catch (DataAccessException ex) {
@@ -365,7 +365,7 @@ public class NbaDataService {
         return List.of();
       }
       return rows.stream()
-          .map(r -> new TopPlayer(r.name(), normalized(playerTeamName(r.playerId())), round(r.points())))
+          .map(r -> new TopPlayer(r.playerId(), r.name(), normalized(playerTeamName(r.playerId())), round(r.points())))
           .toList();
     } catch (DataAccessException ex) {
       return List.of();

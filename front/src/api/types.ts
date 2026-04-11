@@ -75,6 +75,7 @@ export interface RecentGame {
 }
 
 export interface TopPlayer {
+  id?: number
   name: string
   team: string
   points: number

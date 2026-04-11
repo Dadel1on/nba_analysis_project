@@ -13,7 +13,8 @@
     <div v-if="currentPage === 1 && rankings.length >= 3" class="podium-container">
       <div class="podium-item silver">
         <div class="rank-badge">2</div>
-        <div class="player-avatar-large">{{ rankings[1].name.charAt(0) }}</div>
+        <img v-if="rankings[1].id && !imageErrors[rankings[1].id]" :src="`https://cdn.nba.com/headshots/nba/latest/260x190/${rankings[1].id}.png`" class="player-avatar-large-img" @error="handleImgError(rankings[1].id)" />
+        <div v-else class="player-avatar-large" :style="{ backgroundColor: getTeamColor(rankings[1].team), color: '#fff' }">{{ rankings[1].name.charAt(0) }}</div>
         <div class="player-name">{{ rankings[1].name }}</div>
         <div class="player-team">{{ rankings[1].team }}</div>
         <div class="player-score">{{ rankings[1].points }} <span class="unit">PPG</span></div>
@@ -21,14 +22,16 @@
       <div class="podium-item gold">
         <div class="crown-icon">👑</div>
         <div class="rank-badge">1</div>
-        <div class="player-avatar-large">{{ rankings[0].name.charAt(0) }}</div>
+        <img v-if="rankings[0].id && !imageErrors[rankings[0].id]" :src="`https://cdn.nba.com/headshots/nba/latest/260x190/${rankings[0].id}.png`" class="player-avatar-large-img" @error="handleImgError(rankings[0].id)" />
+        <div v-else class="player-avatar-large" :style="{ backgroundColor: getTeamColor(rankings[0].team), color: '#fff' }">{{ rankings[0].name.charAt(0) }}</div>
         <div class="player-name">{{ rankings[0].name }}</div>
         <div class="player-team">{{ rankings[0].team }}</div>
         <div class="player-score">{{ rankings[0].points }} <span class="unit">PPG</span></div>
       </div>
       <div class="podium-item bronze">
         <div class="rank-badge">3</div>
-        <div class="player-avatar-large">{{ rankings[2].name.charAt(0) }}</div>
+        <img v-if="rankings[2].id && !imageErrors[rankings[2].id]" :src="`https://cdn.nba.com/headshots/nba/latest/260x190/${rankings[2].id}.png`" class="player-avatar-large-img" @error="handleImgError(rankings[2].id)" />
+        <div v-else class="player-avatar-large" :style="{ backgroundColor: getTeamColor(rankings[2].team), color: '#fff' }">{{ rankings[2].name.charAt(0) }}</div>
         <div class="player-name">{{ rankings[2].name }}</div>
         <div class="player-team">{{ rankings[2].team }}</div>
         <div class="player-score">{{ rankings[2].points }} <span class="unit">PPG</span></div>
@@ -61,7 +64,8 @@
         <el-table-column label="球员信息" min-width="250">
           <template #default="scope">
             <div class="player-info-cell">
-              <div class="player-avatar-mini" :style="{ backgroundColor: getTeamColor(scope.row.team) }">
+              <img v-if="scope.row.id && !imageErrors[scope.row.id]" :src="`https://cdn.nba.com/headshots/nba/latest/260x190/${scope.row.id}.png`" class="player-avatar-mini-img" @error="handleImgError(scope.row.id)" />
+              <div v-else class="player-avatar-mini" :style="{ backgroundColor: getTeamColor(scope.row.team), color: '#fff' }">
                 {{ scope.row.name.charAt(0) }}
               </div>
               <div class="player-meta">
@@ -115,6 +119,11 @@ const loading = ref(false)
 const currentPage = ref(1)
 const pageSize = ref(20)
 const total = ref(0)
+const imageErrors = ref<Record<string, boolean>>({})
+
+const handleImgError = (id: string | number) => {
+  imageErrors.value[String(id)] = true
+}
 
 const getTeamColor = (teamName: string) => {
   const colors: Record<string, string> = {
@@ -279,6 +288,16 @@ onMounted(() => {
 .silver .player-avatar-large { background: #f5f5f5; color: #7f8c8d; }
 .bronze .player-avatar-large { background: #fff2e6; color: #a0522d; }
 
+.player-avatar-large-img {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #f0f2f5;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
 .player-name {
   font-size: 18px;
   font-weight: 800;
@@ -344,6 +363,16 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 16px;
+}
+
+.player-avatar-mini-img {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #f5f7fa;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  border: 1px solid #ebeef5;
 }
 
 .player-avatar-mini {

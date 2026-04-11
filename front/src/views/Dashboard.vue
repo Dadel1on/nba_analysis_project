@@ -85,7 +85,7 @@
             <el-table-column label="球员">
               <template #default="scope">
                 <div class="player-info">
-                  <el-avatar :size="32" class="player-avatar">{{ scope.row.avatarText }}</el-avatar>
+                  <el-avatar :size="34" class="player-avatar" :src="scope.row.avatarUrl" @error="() => true">{{ scope.row.avatarText }}</el-avatar>
                   <div class="player-name-group">
                     <span class="player-name">{{ scope.row.name }}</span>
                     <span class="player-team">{{ scope.row.team }}</span>
@@ -193,6 +193,7 @@ type RankingRow = {
   team: string
   points: number
   avatarText: string
+  avatarUrl?: string
 }
 
 type GameRow = {
@@ -203,10 +204,10 @@ type GameRow = {
 }
 
 const stats = ref<StatCard[]>([
-  { label: '现役球员', value: '-', icon: User, color: '#5252ff', bg: 'rgba(82, 82, 255, 0.08)' },
-  { label: '联盟球队', value: '-', icon: Trophy, color: '#ff4d4d', bg: 'rgba(255, 77, 77, 0.08)' },
-  { label: '赛季场次', value: '-', icon: Calendar, color: '#28c840', bg: 'rgba(40, 200, 64, 0.08)' },
-  { label: '赛季总得分', value: '-', icon: Timer, color: '#febc2e', bg: 'rgba(254, 188, 46, 0.08)' },
+  { label: '现役球员', value: '-', icon: User, color: '#4f46e5', bg: '#eef2ff' },
+  { label: '联盟球队', value: '-', icon: Trophy, color: '#e11d48', bg: '#fff1f2' },
+  { label: '赛季场次', value: '-', icon: Calendar, color: '#16a34a', bg: '#f0fdf4' },
+  { label: '赛季总得分', value: '-', icon: Timer, color: '#ca8a04', bg: '#fefce8' },
 ])
 
 const rankings = ref<RankingRow[]>([])
@@ -241,10 +242,10 @@ const formatPoints = (points: number) => {
 
 const applyOverview = (overview: DashboardPayload) => {
   stats.value = [
-    { label: '现役球员', value: toCompact(overview.stats.activePlayers), icon: User, color: '#5252ff', bg: 'rgba(82, 82, 255, 0.08)' },
-    { label: '联盟球队', value: toCompact(overview.stats.teams), icon: Trophy, color: '#ff4d4d', bg: 'rgba(255, 77, 77, 0.08)' },
-    { label: '赛季场次', value: toCompact(overview.stats.seasonGames), icon: Calendar, color: '#28c840', bg: 'rgba(40, 200, 64, 0.08)' },
-    { label: '赛季总得分', value: toCompact(overview.stats.predictions), icon: Timer, color: '#febc2e', bg: 'rgba(254, 188, 46, 0.08)' },
+    { label: '现役球员', value: toCompact(overview.stats.activePlayers), icon: User, color: '#4f46e5', bg: '#eef2ff' },
+    { label: '联盟球队', value: toCompact(overview.stats.teams), icon: Trophy, color: '#e11d48', bg: '#fff1f2' },
+    { label: '赛季场次', value: toCompact(overview.stats.seasonGames), icon: Calendar, color: '#16a34a', bg: '#f0fdf4' },
+    { label: '赛季总得分', value: toCompact(overview.stats.predictions), icon: Timer, color: '#ca8a04', bg: '#fefce8' },
   ]
   trend.value = overview.trend || []
   positionDistribution.value = overview.positionDistribution || []
@@ -304,7 +305,7 @@ const initOrUpdateCharts = () => {
             showDetail: false,
             showDataShadow: false,
             borderColor: 'rgba(0,0,0,0)',
-            fillerColor: 'rgba(82, 82, 255, 0.14)',
+            fillerColor: 'rgba(79, 70, 229, 0.14)',
             backgroundColor: 'rgba(0, 0, 0, 0.04)',
             dataBackground: {
               lineStyle: { opacity: 0 },
@@ -341,18 +342,18 @@ const initOrUpdateCharts = () => {
             data: yData,
             symbol: 'circle',
             symbolSize: 7,
-            lineStyle: { width: 3, color: '#5252ff' },
-            itemStyle: { color: '#5252ff' },
+            lineStyle: { width: 3, color: '#4f46e5' },
+            itemStyle: { color: '#4f46e5' },
             areaStyle: {
               color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                { offset: 0, color: 'rgba(82, 82, 255, 0.18)' },
-                { offset: 1, color: 'rgba(82, 82, 255, 0.00)' },
+                { offset: 0, color: 'rgba(79, 70, 229, 0.15)' },
+                { offset: 1, color: 'rgba(79, 70, 229, 0.01)' },
               ]),
             },
             markPoint: {
               symbol: 'pin',
               symbolSize: 36,
-              itemStyle: { color: '#5252ff' },
+              itemStyle: { color: '#4f46e5' },
               label: {
                 position: 'top',
                 distance: 8,
@@ -387,8 +388,8 @@ const initOrUpdateCharts = () => {
             smooth: 0.25,
             data: ma3,
             symbol: 'none',
-            lineStyle: { width: 2, type: 'dashed', color: '#7a7aff' },
-            itemStyle: { color: '#7a7aff' },
+            lineStyle: { width: 2, type: 'dashed', color: '#8b5cf6' },
+            itemStyle: { color: '#8b5cf6' },
             emphasis: { focus: 'series' },
             connectNulls: true,
           },
@@ -436,8 +437,8 @@ const initOrUpdateCharts = () => {
             center: ['50%', '45%'],
             label: { show: false },
             labelLine: { show: false },
-            itemStyle: { borderRadius: 10, borderColor: 'rgba(255,255,255,0.9)', borderWidth: 2 },
-            color: ['#5252ff', '#ff4d4d', '#28c840', '#febc2e', '#7a7aff', '#909399'],
+            itemStyle: { borderRadius: 10, borderColor: 'rgba(255,255,255,0.95)', borderWidth: 2 },
+            color: ['#4f46e5', '#e11d48', '#16a34a', '#ca8a04', '#8b5cf6', '#6b7280'],
             data,
             emphasis: { scale: true, scaleSize: 6 },
             animationDuration: 600,
@@ -471,6 +472,7 @@ const loadDashboard = async () => {
       team: p.team,
       points: p.points,
       avatarText: buildAvatarText(p.name),
+      avatarUrl: p.id ? `https://cdn.nba.com/headshots/nba/latest/260x190/${p.id}.png` : '',
     }))
 
     games.value = gamesRes.list.map((g) => ({
@@ -505,33 +507,35 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .dashboard-container {
-  max-width: 1400px;
+  max-width: 1440px;
   margin: 0 auto;
+  padding: 16px;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
 }
 
 .error-alert {
-  margin-bottom: 20px;
-  border-radius: 10px;
+  margin-bottom: 24px;
+  border-radius: 12px;
 }
 
 /* 页面头部 */
 .page-header {
-  margin-bottom: 32px;
+  margin-bottom: 40px;
 }
 
 .header-main {
   display: flex;
   align-items: center;
   gap: 16px;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 
 h1 {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 800;
-  letter-spacing: -1px;
+  letter-spacing: -0.025em;
   margin: 0;
-  color: #000;
+  color: #111827;
 }
 
 .status-badge {
@@ -539,113 +543,132 @@ h1 {
   align-items: center;
   gap: 8px;
   padding: 4px 12px;
-  background: rgba(40, 200, 64, 0.08);
-  border: 1px solid rgba(40, 200, 64, 0.15);
-  border-radius: 100px;
-  font-size: 11px;
-  font-weight: 700;
-  color: #28c840;
+  background: rgba(40, 200, 64, 0.1);
+  border: 1px solid rgba(40, 200, 64, 0.2);
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #16a34a;
 }
 
 .pulse-dot {
-  width: 6px;
-  height: 6px;
-  background: #28c840;
+  width: 8px;
+  height: 8px;
+  background: #22c55e;
   border-radius: 50%;
   animation: pulse 2s infinite;
 }
 
 @keyframes pulse {
-  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(40, 200, 64, 0.7); }
-  70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(40, 200, 64, 0); }
-  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(40, 200, 64, 0); }
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+  70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
 }
 
 .header-subtitle {
-  font-size: 14px;
-  color: rgba(0, 0, 0, 0.5);
+  font-size: 15px;
+  color: #6b7280;
+  margin: 0;
 }
 
 /* 统计卡片 */
+.stat-row {
+  margin-bottom: 24px;
+}
+
 .stat-card {
-  background: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: #ffffff;
+  border: 1px solid #f3f4f6;
   border-radius: 20px;
   padding: 24px;
   display: flex;
   align-items: center;
   gap: 20px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .stat-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.04);
-  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+  border-color: #e5e7eb;
 }
 
 .stat-icon-box {
-  width: 56px;
-  height: 56px;
-  border-radius: 16px;
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
+  font-size: 28px;
+}
+
+.stat-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .stat-label {
-  font-size: 13px;
-  font-weight: 600;
-  color: rgba(0, 0, 0, 0.4);
+  font-size: 14px;
+  font-weight: 500;
+  color: #6b7280;
   margin-bottom: 4px;
 }
 
 .stat-value {
-  font-size: 24px;
+  font-size: 28px;
   font-weight: 800;
-  color: #000;
+  color: #111827;
   margin-bottom: 4px;
+  line-height: 1.2;
 }
 
 .stat-trend {
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .stat-trend.sync {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  color: rgba(0, 0, 0, 0.5);
+  gap: 6px;
+  color: #9ca3af;
 }
 
 .sync-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #28c840;
-  box-shadow: 0 0 10px rgba(40, 200, 64, 0.35);
+  background: #22c55e;
+  opacity: 0.8;
 }
 
 /* 内容区块 */
+.chart-row, .content-row {
+  margin-bottom: 24px;
+}
+
 .glass-section {
-  background: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  border-radius: 24px;
-  padding: 24px;
+  background: #ffffff;
+  border: 1px solid #f3f4f6;
+  border-radius: 20px;
+  padding: 28px;
   height: 100%;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
 }
 
 .chart-container {
   width: 100%;
-  height: 360px;
+  height: 380px;
 }
 
 .right-stack {
   display: flex;
   flex-direction: column;
   gap: 24px;
+  height: 100%;
 }
 
 .section-header {
@@ -653,6 +676,8 @@ h1 {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f3f4f6;
 }
 
 .header-left {
@@ -662,25 +687,26 @@ h1 {
 }
 
 .title-icon {
-  font-size: 20px;
-  color: #5252ff;
+  font-size: 22px;
+  color: #4f46e5;
 }
 
 h3 {
   font-size: 18px;
   font-weight: 700;
   margin: 0;
-  color: #000;
+  color: #111827;
 }
 
 .view-all-btn {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
-  color: rgba(0, 0, 0, 0.4);
+  color: #6b7280;
+  transition: color 0.2s;
 }
 
 .view-all-btn:hover {
-  color: #5252ff;
+  color: #4f46e5;
 }
 
 /* 表格定制 */
@@ -690,12 +716,10 @@ h3 {
 
 .custom-table :deep(th.el-table__cell) {
   background-color: transparent !important;
-  color: rgba(0, 0, 0, 0.4) !important;
-  font-weight: 700 !important;
-  font-size: 12px !important;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.04) !important;
+  color: #6b7280 !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  border-bottom: 1px solid #e5e7eb !important;
 }
 
 .custom-table :deep(.el-table__row) {
@@ -704,94 +728,101 @@ h3 {
 
 .custom-table :deep(.el-table__cell) {
   padding: 16px 0 !important;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.04) !important;
+  border-bottom: 1px solid #f3f4f6 !important;
 }
 
 .rank-badge {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 800;
-  background: rgba(0, 0, 0, 0.03);
-  color: rgba(0, 0, 0, 0.4);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  background: #f3f4f6;
+  color: #4b5563;
 }
 
-.rank-1 { background: #febc2e; color: #fff; }
-.rank-2 { background: #b8c0cc; color: #fff; }
-.rank-3 { background: #cd7f32; color: #fff; }
+.rank-1 { background: #fef08a; color: #a16207; }
+.rank-2 { background: #e5e7eb; color: #374151; }
+.rank-3 { background: #fed7aa; color: #9a3412; }
 
 .player-info {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
 }
 
 .player-avatar {
-  background: rgba(0, 0, 0, 0.05);
-  color: rgba(0, 0, 0, 0.7);
-  font-weight: 800;
+  background: #f3f4f6;
+  color: #4b5563;
+  font-weight: 700;
 }
 
 .player-name-group {
   display: flex;
   flex-direction: column;
+  gap: 2px;
 }
 
 .player-name {
-  font-size: 14px;
-  font-weight: 700;
-  color: #000;
+  font-size: 15px;
+  font-weight: 600;
+  color: #111827;
 }
 
 .player-team {
-  font-size: 11px;
-  font-weight: 700;
-  color: rgba(0, 0, 0, 0.3);
+  font-size: 13px;
+  font-weight: 500;
+  color: #9ca3af;
 }
 
 .score-cell {
-  font-weight: 800;
-  color: #000;
+  font-weight: 700;
+  font-size: 15px;
+  color: #111827;
 }
 
 .top-player-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .top-player-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 12px;
-  border-radius: 16px;
-  background: rgba(0, 0, 0, 0.02);
-  border: 1px solid rgba(0, 0, 0, 0.04);
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #fafafa;
+  border: 1px solid #f3f4f6;
+  transition: background-color 0.2s;
+}
+
+.top-player-item:hover {
+  background: #f3f4f6;
 }
 
 .top-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   min-width: 0;
 }
 
 .mini-rank {
-  width: 22px;
-  height: 22px;
-  border-radius: 8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   font-size: 12px;
-  font-weight: 900;
-  background: rgba(82, 82, 255, 0.1);
-  color: #5252ff;
+  font-weight: 700;
+  background: #eef2ff;
+  color: #4f46e5;
 }
 
 .top-meta {
@@ -799,18 +830,19 @@ h3 {
 }
 
 .top-name {
-  font-size: 13px;
-  font-weight: 800;
-  color: #000;
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .top-team {
-  font-size: 11px;
-  font-weight: 700;
-  color: rgba(0, 0, 0, 0.4);
+  font-size: 12px;
+  font-weight: 500;
+  color: #9ca3af;
+  margin-top: 2px;
 }
 
 .top-right {
@@ -820,16 +852,15 @@ h3 {
 }
 
 .top-points {
-  font-size: 14px;
-  font-weight: 900;
-  color: #5252ff;
+  font-size: 16px;
+  font-weight: 700;
+  color: #4f46e5;
 }
 
 .top-unit {
-  font-size: 10px;
-  font-weight: 800;
-  color: rgba(0, 0, 0, 0.35);
-  letter-spacing: 1px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #9ca3af;
 }
 
 /* 赛程列表 */
@@ -840,18 +871,22 @@ h3 {
 }
 
 .game-item {
-  background: rgba(0, 0, 0, 0.02);
-  border: 1px solid rgba(0, 0, 0, 0.04);
-  border-radius: 16px;
-  padding: 20px;
+  background: #fafafa;
+  border: 1px solid #f3f4f6;
+  border-radius: 12px;
+  padding: 16px 20px;
+  transition: background-color 0.2s;
+}
+
+.game-item:hover {
+  background: #f3f4f6;
 }
 
 .game-time {
-  font-size: 11px;
-  font-weight: 700;
-  color: rgba(0, 0, 0, 0.3);
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
   margin-bottom: 12px;
-  letter-spacing: 1px;
 }
 
 .matchup {
@@ -870,20 +905,15 @@ h3 {
 .team.text-right { align-items: flex-end; }
 
 .team-name {
-  font-size: 15px;
-  font-weight: 800;
-  color: #000;
-}
-
-.team-record {
-  font-size: 11px;
-  color: rgba(0, 0, 0, 0.4);
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
 }
 
 .vs-text {
-  font-size: 12px;
-  font-weight: 900;
-  color: rgba(0, 0, 0, 0.1);
+  font-size: 13px;
+  font-weight: 700;
+  color: #d1d5db;
   padding: 0 16px;
 }
 
@@ -891,30 +921,29 @@ h3 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-top: 12px;
-  border-top: 1px solid rgba(0, 0, 0, 0.04);
+  padding-top: 14px;
+  border-top: 1px solid #e5e7eb;
 }
 
 .prediction-tag {
-  font-size: 11px;
-  font-weight: 700;
-  color: #5252ff;
+  font-size: 13px;
+  font-weight: 600;
+  color: #4f46e5;
 }
 
 .btn-detail {
-  font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 /* 动画 */
-.fade-in { animation: fadeIn 0.8s ease-out forwards; }
-.slide-up { opacity: 0; animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; animation-delay: var(--delay, 0s); }
+.fade-in { animation: fadeIn 0.6s ease-out forwards; }
+.slide-up { opacity: 0; animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; animation-delay: var(--delay, 0s); }
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 
 @media (max-width: 1200px) {
   .el-col-6 { width: 50% !important; margin-bottom: 24px; }
-  .el-col-16, .el-col-8 { width: 100% !important; }
+  .el-col-16, .el-col-8 { width: 100% !important; margin-bottom: 24px; }
 }
 </style>
