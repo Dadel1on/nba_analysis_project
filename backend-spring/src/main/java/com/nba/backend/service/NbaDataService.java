@@ -7,6 +7,7 @@ import com.nba.backend.model.*;
 import com.nba.backend.repository.*;
 import jakarta.annotation.PostConstruct;
 import org.springframework.dao.DataAccessException;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -377,29 +378,40 @@ public class NbaDataService {
   public PlayersPayload searchPlayers(String name, int page, int limit) {
     String keyword = name == null ? "" : name.toLowerCase(Locale.ROOT).trim();
     int safePage = Math.max(page, 1);
-    int safeLimit = Math.max(limit, 1);
+    int safeLimit = Math.min(Math.max(limit, 1), 100);
 
     List<PlayerSummary> candidates;
+    long total;
     if (playerRepository.count() > 0) {
       if (keyword.isBlank()) {
         candidates = recentPlayersWithTeam(safePage, safeLimit);
+        total = playerRepository.count();
         if (candidates.isEmpty()) {
-          candidates = playerRepository.findAll(PageRequest.of(Math.max(safePage - 1, 0), safeLimit)).stream().map(this::toPlayerSummary).toList();
+          Page<PlayerEntity> pageData = playerRepository.findAll(PageRequest.of(Math.max(safePage - 1, 0), safeLimit));
+          candidates = toPlayerSummaries(pageData.getContent());
+          total = pageData.getTotalElements();
         }
       } else {
-        candidates = playerRepository.findByNameContainingIgnoreCase(keyword).stream().map(this::toPlayerSummary).toList();
+        Page<PlayerEntity> pageData = playerRepository.findByNameContainingIgnoreCase(
+            keyword,
+            PageRequest.of(Math.max(safePage - 1, 0), safeLimit)
+        );
+        candidates = toPlayerSummaries(pageData.getContent());
+        total = pageData.getTotalElements();
       }
     } else {
-      candidates = fallbackPlayers.stream()
+      List<PlayerSummary> filtered = fallbackPlayers.stream()
           .filter(p -> keyword.isBlank() || p.name().toLowerCase(Locale.ROOT).contains(keyword))
           .toList();
 
-      int fromIndex = Math.min((safePage - 1) * safeLimit, candidates.size());
-      int toIndex = Math.min(fromIndex + safeLimit, candidates.size());
-      candidates = candidates.subList(fromIndex, toIndex);
+      total = filtered.size();
+
+      int fromIndex = Math.min((safePage - 1) * safeLimit, filtered.size());
+      int toIndex = Math.min(fromIndex + safeLimit, filtered.size());
+      candidates = filtered.subList(fromIndex, toIndex);
     }
 
-    return new PlayersPayload(candidates);
+    return new PlayersPayload(candidates, total);
   }
 
   public PlayerSummary getPlayerById(long id) {
@@ -608,16 +620,15 @@ public class NbaDataService {
 
     List<Long> playerIds = jdbcTemplate.query(
         """
-            SELECT fpg.player_id
-            FROM fact_player_game fpg
-            JOIN fact_game fg ON fpg.game_id = fg.game_id
-            JOIN fact_player_season fps ON fpg.player_id = fps.player_id AND fg.season_year = fps.season_year
-            GROUP BY fpg.player_id
-            ORDER BY 
-              MAX(fg.season_year) DESC, 
-              MAX(fps.avg_points) DESC,
-              COUNT(DISTINCT fg.season_year) DESC,
-              MAX(fg.game_date) DESC
+            SELECT fps.player_id
+            FROM fact_player_season fps
+            JOIN (
+              SELECT player_id, MAX(season_year) AS season_year
+              FROM fact_player_season
+              GROUP BY player_id
+            ) latest
+              ON fps.player_id = latest.player_id AND fps.season_year = latest.season_year
+            ORDER BY fps.season_year DESC, fps.avg_points DESC, fps.player_id DESC
             LIMIT ? OFFSET ?
             """,
         (rs, rowNum) -> rs.getLong(1),
@@ -699,6 +710,112 @@ public class NbaDataService {
       result.add(new PlayerSummary(id, row.name(), team, normalized(row.position()), stats));
     }
     return result;
+  }
+
+  private List<PlayerSummary> toPlayerSummaries(List<PlayerEntity> entities) {
+    if (entities == null || entities.isEmpty()) {
+      return List.of();
+    }
+
+    List<Long> playerIds = entities.stream()
+        .map(PlayerEntity::getId)
+        .filter(id -> id != null && id > 0)
+        .toList();
+
+    if (playerIds.isEmpty()) {
+      return entities.stream()
+          .map(e -> new PlayerSummary(
+              e.getId(),
+              e.getName(),
+              null,
+              normalized(e.getPosition()),
+              new PlayerStats(0.0, 0.0, 0.0)
+          ))
+          .toList();
+    }
+
+    Map<Long, PlayerStats> statsMap = queryLatestStatsByPlayerIds(playerIds);
+    Map<Long, String> teamMap = queryRecentTeamNamesByPlayerIds(playerIds);
+
+    return entities.stream()
+        .map(e -> {
+          Long id = e.getId();
+          long safeId = id == null ? 0L : id;
+          PlayerStats stats = id == null ? null : statsMap.get(id);
+          if (stats == null) {
+            stats = new PlayerStats(0.0, 0.0, 0.0);
+          }
+          String teamName = id == null ? null : normalized(teamMap.get(id));
+          return new PlayerSummary(
+              safeId,
+              e.getName(),
+              teamName,
+              normalized(e.getPosition()),
+              stats
+          );
+        })
+        .toList();
+  }
+
+  private Map<Long, PlayerStats> queryLatestStatsByPlayerIds(List<Long> playerIds) {
+    if (playerIds == null || playerIds.isEmpty()) {
+      return Map.of();
+    }
+
+    String placeholders = playerIds.stream().map(v -> "?").collect(Collectors.joining(","));
+    try {
+      return jdbcTemplate.query(
+          "SELECT fps.player_id, fps.avg_points, fps.avg_rebounds, fps.avg_assists " +
+              "FROM fact_player_season fps " +
+              "JOIN ( " +
+              "    SELECT player_id, MAX(season_year) AS max_year " +
+              "    FROM fact_player_season " +
+              "    WHERE player_id IN (" + placeholders + ") " +
+              "    GROUP BY player_id " +
+              ") latest ON fps.player_id = latest.player_id AND fps.season_year = latest.max_year",
+          rs -> {
+            Map<Long, PlayerStats> map = new HashMap<>();
+            while (rs.next()) {
+              map.put(rs.getLong(1), new PlayerStats(rs.getDouble(2), rs.getDouble(3), rs.getDouble(4)));
+            }
+            return map;
+          },
+          playerIds.toArray()
+      );
+    } catch (DataAccessException ex) {
+      return Map.of();
+    }
+  }
+
+  private Map<Long, String> queryRecentTeamNamesByPlayerIds(List<Long> playerIds) {
+    if (playerIds == null || playerIds.isEmpty()) {
+      return Map.of();
+    }
+
+    String placeholders = playerIds.stream().map(v -> "?").collect(Collectors.joining(","));
+    try {
+      return jdbcTemplate.query(
+          "SELECT fpg.player_id, dt.team_name " +
+              "FROM fact_player_game fpg " +
+              "JOIN dim_team dt ON fpg.team_id = dt.team_id " +
+              "JOIN ( " +
+              "    SELECT player_id, MAX(id) AS max_id " +
+              "    FROM fact_player_game " +
+              "    WHERE player_id IN (" + placeholders + ") " +
+              "    GROUP BY player_id " +
+              ") latest ON fpg.id = latest.max_id",
+          rs -> {
+            Map<Long, String> map = new HashMap<>();
+            while (rs.next()) {
+              map.put(rs.getLong(1), rs.getString(2));
+            }
+            return map;
+          },
+          playerIds.toArray()
+      );
+    } catch (DataAccessException ex) {
+      return Map.of();
+    }
   }
 
   private TeamComparisonMetrics buildMetrics(String team, String metric, Integer season) {

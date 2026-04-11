@@ -3,6 +3,12 @@ import type { ApiEnvelope, PlayerSummary, SearchPlayersParams } from './types'
 
 type PlayersApiPayload = {
   players?: PlayerSummary[]
+  total?: number
+}
+
+export type SearchPlayersPageResult = {
+  players: PlayerSummary[]
+  total: number
 }
 
 const EMPTY_STATS = {
@@ -61,9 +67,30 @@ function normalizePlayers(payload: unknown): PlayerSummary[] {
   }))
 }
 
+function normalizePlayersPage(payload: unknown): SearchPlayersPageResult {
+  if (!payload || typeof payload !== 'object') {
+    return { players: [], total: 0 }
+  }
+
+  const maybe = payload as PlayersApiPayload & ApiEnvelope<PlayersApiPayload>
+  const players = normalizePlayers(payload)
+  const totalRaw = maybe.total ?? maybe.data?.total
+  const total = Number.isFinite(Number(totalRaw)) ? Number(totalRaw) : players.length
+
+  return {
+    players,
+    total,
+  }
+}
+
 export async function searchPlayers(params: SearchPlayersParams): Promise<PlayerSummary[]> {
   const data = await getApi<unknown>('/api/players', { params })
   return normalizePlayers(data)
+}
+
+export async function searchPlayersPage(params: SearchPlayersParams): Promise<SearchPlayersPageResult> {
+  const data = await getApi<unknown>('/api/players', { params })
+  return normalizePlayersPage(data)
 }
 
 export async function getPlayerById(playerId: number): Promise<PlayerSummary | null> {

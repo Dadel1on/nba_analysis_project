@@ -143,7 +143,7 @@ import { onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { LocationQueryRaw } from 'vue-router'
 import { Search, User, ArrowRight, Refresh } from '@element-plus/icons-vue'
-import { searchPlayers } from '@/api/players'
+import { searchPlayersPage } from '@/api/players'
 import type { PlayerSummary } from '@/api/types'
 import PredictionView from './Prediction.vue'
 
@@ -158,7 +158,7 @@ const loading = ref(false)
 const errorMessage = ref('')
 const currentPage = ref(1)
 const pageSize = ref(20)
-const total = ref(0) // Note: Backend searchPlayers currently doesn't return total count in the payload, but we'll use a placeholder or update it later.
+const total = ref(0)
 const lastQueryKey = ref<string | null>(null)
 
 const getTeamColor = (teamName: string | null) => {
@@ -216,27 +216,26 @@ const fetchPlayers = async (options?: { force?: boolean }) => {
   loading.value = true
   errorMessage.value = ''
   try {
-    const data = await searchPlayers({
+    const result = await searchPlayersPage({
       name: searchQuery.value,
       page: currentPage.value,
       limit: pageSize.value,
     })
     // 过滤掉位置未知的球员
-    players.value = data.filter(p => {
+    players.value = result.players.filter(p => {
       const pos = p.position?.toLowerCase() || ''
       return pos && 
              !pos.includes('未知') && 
              !pos.includes('unknown') && 
              !pos.includes('unk')
     })
-    // Total count is currently not returned by API as a separate field in searchPlayers, 
-    // assuming it might be added or we can just use the length for now if it's small.
-    // In a real scenario, the API should return { list, total }.
-    total.value = data.length < pageSize.value ? (currentPage.value - 1) * pageSize.value + data.length : 1000 
+    total.value = result.total
     lastQueryKey.value = queryKey
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : '加载球员数据失败'
+    const message = error instanceof Error ? error.message : '加载球员数据失败'
+    errorMessage.value = message.includes('timeout') ? '请求超时，请稍后重试或缩小关键词范围' : message
     players.value = []
+    total.value = 0
   } finally {
     loading.value = false
   }

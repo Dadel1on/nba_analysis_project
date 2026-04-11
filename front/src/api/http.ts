@@ -10,6 +10,9 @@ export const http = axios.create({
 http.interceptors.response.use(
   (response) => response,
   (error) => {
+    if (error?.code === 'ECONNABORTED') {
+      return Promise.reject(new Error('请求超时，请稍后重试'))
+    }
     const status = error?.response?.status
     const message = error?.response?.data?.message || error?.message || 'Request failed'
     return Promise.reject(new Error(status ? `[${status}] ${message}` : message))
