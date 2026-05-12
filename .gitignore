@@ -9,6 +9,10 @@ target/
 *.class
 *.log
 
+# JVM crash logs
+hs_err_pid*.log
+replay_pid*.log
+
 # Maven
 .m2/
 pom.xml.tag
@@ -36,6 +40,17 @@ dist/
 build/
 out/
 
+# Gradle (if needed in future)
+.gradle/
+gradle/
+
+# Merge conflict files
+*.orig
+*.rej
+
+# Log files
+preprocess_log.txt
+
 # Python
 __pycache__/
 *.py[cod]
@@ -44,3 +59,5 @@ __pycache__/
 .Python
 env/
 venv/
+.venv/
+ENV/
