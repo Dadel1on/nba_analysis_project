@@ -85,7 +85,20 @@
             <el-table-column label="球员">
               <template #default="scope">
                 <div class="player-info">
-                  <el-avatar :size="34" class="player-avatar" :src="scope.row.avatarUrl" @error="() => true">{{ scope.row.avatarText }}</el-avatar>
+                  <el-avatar
+                    v-if="scope.row.avatarUrl && !imageErrors[getAvatarKey(scope.row)]"
+                    :size="34"
+                    class="player-avatar"
+                    :src="scope.row.avatarUrl"
+                    @error="handleAvatarError(scope.row)"
+                  />
+                  <div
+                    v-else
+                    class="player-avatar player-avatar-fallback"
+                    :style="getTeamAvatarStyle(scope.row.team)"
+                  >
+                    {{ scope.row.avatarText }}
+                  </div>
                   <div class="player-name-group">
                     <span class="player-name">{{ scope.row.name }}</span>
                     <span class="player-team">{{ scope.row.team }}</span>
@@ -189,6 +202,7 @@ type StatCard = {
 }
 
 type RankingRow = {
+  id?: number
   name: string
   team: string
   points: number
@@ -216,6 +230,7 @@ const trend = ref<TrendPoint[]>([])
 const positionDistribution = ref<PositionDistributionItem[]>([])
 const overviewTopPlayers = ref<TopPlayer[]>([])
 const positionTotal = ref(0)
+const imageErrors = ref<Record<string, boolean>>({})
 
 const trendChartRef = ref<HTMLElement | null>(null)
 const positionChartRef = ref<HTMLElement | null>(null)
@@ -233,6 +248,33 @@ const buildAvatarText = (name: string) => {
   const parts = trimmed.split(/\s+/).filter(Boolean)
   const initials = parts.slice(0, 2).map((p) => p[0]?.toUpperCase()).filter(Boolean).join('')
   return initials || trimmed[0].toUpperCase()
+}
+
+const getAvatarKey = (player: RankingRow) => String(player.id ?? player.name)
+
+const handleAvatarError = (player: RankingRow) => {
+  imageErrors.value[getAvatarKey(player)] = true
+  return false
+}
+
+const getTeamAvatarStyle = (teamName: string) => {
+  const colors: Record<string, string> = {
+    '76人': '#006bb6',
+    '独行侠': '#00538c',
+    '雷霆': '#007ac1',
+    '雄鹿': '#00471b',
+    '掘金': '#0e2240',
+    '凯尔特人': '#007a33',
+    '湖人': '#552583',
+    '勇士': '#1d428a',
+    '太阳': '#1d1160',
+    '快船': '#c8102e',
+  }
+  const color = colors[teamName] || '#4b5563'
+  return {
+    background: `linear-gradient(135deg, ${color} 0%, ${color}cc 100%)`,
+    color: '#ffffff',
+  }
 }
 
 const formatPoints = (points: number) => {
@@ -461,13 +503,14 @@ const loadDashboard = async () => {
   try {
     const [overview, rankingsRes, gamesRes] = await Promise.all([
       getDashboardOverview(),
-      getPowerRankings(1, 10),
+      getPowerRankings(1, 11),
       getGameRecords(1, 3),
     ])
 
     applyOverview(overview)
 
-    rankings.value = rankingsRes.list.map((p) => ({
+    rankings.value = rankingsRes.list.slice(0, 10).map((p) => ({
+      id: p.id,
       name: p.name,
       team: p.team,
       points: p.points,
@@ -758,6 +801,19 @@ h3 {
   background: #f3f4f6;
   color: #4b5563;
   font-weight: 700;
+  flex-shrink: 0;
+}
+
+.player-avatar-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  font-size: 12px;
+  letter-spacing: 0.4px;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
 }
 
 .player-name-group {

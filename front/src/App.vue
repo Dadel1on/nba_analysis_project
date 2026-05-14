@@ -75,10 +75,6 @@
           </div>
         </div>
         <div class="header-right">
-          <div class="status-badge nba-status">
-            <span class="pulse-dot red"></span>
-            Live Data Active
-          </div>
         </div>
       </el-header>
 
@@ -312,33 +308,6 @@ html, body {
   font-weight: 800;
 }
 
-.status-badge.nba-status {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 6px 14px;
-  background: rgba(201, 8, 42, 0.05);
-  border: 1px solid rgba(201, 8, 42, 0.1);
-  border-radius: 100px;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--trae-primary);
-}
-
-.pulse-dot.red {
-  width: 8px;
-  height: 8px;
-  background-color: var(--trae-primary);
-  border-radius: 50%;
-  animation: pulse-ring 2s infinite;
-  box-shadow: 0 0 6px var(--trae-primary);
-}
-
-@keyframes pulse-ring {
-  0% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(201, 8, 42, 0.4); }
-  70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(201, 8, 42, 0); }
-  100% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(201, 8, 42, 0); }
-}
 
 /* 页面内容区 */
 .page-content {
